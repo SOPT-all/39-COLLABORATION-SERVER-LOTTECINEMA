@@ -92,7 +92,7 @@ README.md
 
 ## 🚀 시작하기
 
-아래 절차를 따라 Docker 기반의 로컬 데이터베이스와 Spring Boot 애플리케이션을 실행합니다.
+아래 절차를 따라 Docker 기반의 로컬 데이터베이스와 Spring Boot 애플리케이션을 실행합니다. 애플리케이션은 호스트에서 실행하고 MySQL만 컨테이너로 구동합니다.
 
 ### 1. 저장소 복제
 
@@ -103,7 +103,13 @@ cd 39-COLLABORATION-SERVER-LOTTECINEMA
 
 ### 2. 환경 변수 파일 준비
 
-`.env`에는 실제 계정 정보가 포함될 수 있으므로 Git에 커밋하지 않습니다. 해당 파일은 `.gitignore`에 등록되어 있어야 합니다.
+예시 파일을 복사해 로컬 `.env`를 만들고, 비밀번호를 원하는 값으로 변경합니다.
+
+```bash
+cp .env.example .env
+```
+
+`.env`는 Git에 커밋하지 않습니다. 이 파일의 변수는 Docker Compose가 MySQL을 초기화할 때 사용합니다. Spring Boot는 `application-local.yml`의 로컬 기본값을 사용하며, 필요하면 IntelliJ 실행 환경 변수로 덮어쓸 수 있습니다.
 
 ### 3. MySQL 컨테이너 실행
 
@@ -112,7 +118,11 @@ docker compose up -d
 docker compose ps
 ```
 
-`docker compose ps` 결과에서 컨테이너 상태가 `Up` 또는 `running`인지 확인합니다.
+`docker compose ps` 결과에서 컨테이너 상태가 `Up` 또는 `running`인지 확인합니다. 로컬 MySQL은 기본적으로 `localhost:3307`에서 접속할 수 있습니다. 호스트의 `3307` 포트가 이미 사용 중이면 `.env`의 `MYSQL_PORT` 값을 변경하고 `application-local.yml`의 포트도 같은 값으로 맞추세요.
+
+로컬 실행은 기본 `local` 프로필을 사용하므로 IntelliJ 실행 설정에 DB 환경 변수를 따로 넣지 않아도 됩니다. `application-local.yml`의 접속 정보는 로컬 개발용이며, 운영 환경에서는 `SPRING_PROFILES_ACTIVE=prod`와 운영 DB 환경 변수를 설정합니다.
+
+> MySQL의 사용자·데이터베이스 환경 변수는 데이터 볼륨이 처음 만들어질 때 적용됩니다. 이미 초기화한 볼륨이 있다면 Compose 환경 변수 변경만으로 기존 DB 계정이 바뀌지 않습니다.
 
 ### 4. Spring Boot 애플리케이션 실행
 
@@ -127,4 +137,4 @@ IntelliJ에서 `LottecinemaApplication.java`를 실행하거나 터미널에서 
 
 서버 실행 후 브라우저에서 Swagger UI를 엽니다.
 
-<http://localhost:8080/swagger.html>
+<http://localhost:8080/swagger-ui/index.html>

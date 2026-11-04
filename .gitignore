@@ -39,3 +39,5 @@ out/
 # 환경 변수 민감 파일 제외
 .env
 .env.local
+.env.*
+!.env.example
