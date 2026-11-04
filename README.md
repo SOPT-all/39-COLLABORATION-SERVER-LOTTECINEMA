@@ -3,6 +3,11 @@
 
 롯데시네마 모바일 웹 서비스의 사용자 경험 개선을 위한 백엔드 API 서버입니다.
 
+## 👥 팀원 소개
+
+| 파트 | 리드 | 팀원 |
+| --- | --- | --- |
+| 서버 | 이정현 | 정교은, 박이수 |
 
 ## 🛠 기술 스택
 
@@ -11,33 +16,21 @@
 | Backend | Java, Spring Boot, Spring Data JPA, Lombok |
 | Build & API Docs | Gradle, Swagger |
 | Database & Storage | MySQL, AWS S3 |
-| Infrastructure | Docker, Docker Compose, AWS EC2, AWS RDS |
+| Infrastructure | AWS EC2, AWS RDS |
 
 ## 🏛 서버 아키텍처
 
 ### 로컬 개발 환경
 
-`docker-compose.yml`을 사용해 로컬 MySQL 및 개발 인프라를 컨테이너로 실행합니다.
+DB 주소와 계정은 `src/main/resources/application.yml`에 각자 로컬 환경에 맞게 설정합니다.
+
 
 ### 운영 환경 구성안
 
-| 구성 | 아키텍처 | 특징 |
-| --- | --- | --- |
-| Option A | AWS EC2 + AWS RDS(MySQL) + AWS S3 | 관리형 데이터베이스를 활용하는 고가용성 구성 |
-| Option B | AWS EC2(Spring Boot + MySQL on Docker) + AWS S3 | 컨테이너 기반 운영으로 비용을 최적화하는 구성 |
+ | 아키텍처 | 특징 |
+ | --- | --- |
+ | AWS EC2 + AWS RDS(MySQL) + AWS S3 | 관리형 데이터베이스를 활용하는 고가용성 구성 |
 
-> 운영 환경은 서비스 요구사항과 비용을 고려해 두 구성안 중 선택합니다.
-
-### 정적 미디어 저장소
-
-영화 포스터, 스틸컷, 배너 등 대용량 미디어는 AWS S3에 저장합니다. API 서버와 미디어 저장소를 분리해 서버의 네트워크 및 디스크 I/O 부하를 줄입니다.
-
-```mermaid
-flowchart TB
-    Client[Client<br/>Mobile Web] --> EC2[AWS EC2<br/>Spring Boot API]
-    EC2 --> S3[AWS S3<br/>포스터 · 스틸컷 · 배너]
-    EC2 --> DB[(MySQL Database / RDS<br/>영화 · 상영관 · 시간표 · 좌석 · 예매)]
-```
 
 ## 🌿 브랜치 전략
 
@@ -84,15 +77,14 @@ src
     │   │   └── exception    # 예외 처리 (예: GlobalExceptionHandler, ErrorCode)
     │   └── [domain]         # 도메인별 Entity, Controller, Service, DTO
     └── resources
-        └── application.yml  # 환경 변수 기반 설정
+        └── application.yml  # 로컬/배포 환경의 DB 및 애플리케이션 설정
 
-docker-compose.yml           # 로컬 개발 인프라
 README.md
 ```
 
 ## 🚀 시작하기
 
-아래 절차를 따라 Docker 기반의 로컬 데이터베이스와 Spring Boot 애플리케이션을 실행합니다. 애플리케이션은 호스트에서 실행하고 MySQL만 컨테이너로 구동합니다.
+아래 절차를 따라 로컬 MySQL과 Spring Boot 애플리케이션을 실행합니다. MySQL은 개발자 컴퓨터에 설치되어 실행 중이어야 합니다.
 
 ### 1. 저장소 복제
 
@@ -101,28 +93,36 @@ git clone https://github.com/SOPT-all/39-COLLABORATION-SERVER-LOTTECINEMA.git
 cd 39-COLLABORATION-SERVER-LOTTECINEMA
 ```
 
-### 2. 환경 변수 파일 준비
+### 2. 로컬 MySQL 준비
 
-예시 파일을 복사해 로컬 `.env`를 만들고, 비밀번호를 원하는 값으로 변경합니다.
-
-```bash
-cp .env.example .env
-```
-
-`.env`는 Git에 커밋하지 않습니다. 이 파일의 변수는 Docker Compose가 MySQL을 초기화할 때 사용합니다. Spring Boot는 `application-local.yml`의 로컬 기본값을 사용하며, 필요하면 IntelliJ 실행 환경 변수로 덮어쓸 수 있습니다.
-
-### 3. MySQL 컨테이너 실행
+MySQL 서버를 실행하고 프로젝트에서 사용할 데이터베이스를 생성합니다.
 
 ```bash
-docker compose up -d
-docker compose ps
+mysql -u root -p
 ```
 
-`docker compose ps` 결과에서 컨테이너 상태가 `Up` 또는 `running`인지 확인합니다. 로컬 MySQL은 기본적으로 `localhost:3307`에서 접속할 수 있습니다. 호스트의 `3307` 포트가 이미 사용 중이면 `.env`의 `MYSQL_PORT` 값을 변경하고 `application-local.yml`의 포트도 같은 값으로 맞추세요.
+MySQL 프롬프트에서 다음을 실행합니다.
 
-로컬 실행은 기본 `local` 프로필을 사용하므로 IntelliJ 실행 설정에 DB 환경 변수를 따로 넣지 않아도 됩니다. `application-local.yml`의 접속 정보는 로컬 개발용이며, 운영 환경에서는 `SPRING_PROFILES_ACTIVE=prod`와 운영 DB 환경 변수를 설정합니다.
+```sql
+CREATE DATABASE lottecinema CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
 
-> MySQL의 사용자·데이터베이스 환경 변수는 데이터 볼륨이 처음 만들어질 때 적용됩니다. 이미 초기화한 볼륨이 있다면 Compose 환경 변수 변경만으로 기존 DB 계정이 바뀌지 않습니다.
+### 3. DB 접속 정보 설정
+
+`src/main/resources/application.yml`의 다음 값을 로컬 MySQL 설정에 맞게 수정합니다.
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/lottecinema
+    username: # 로컬 MySQL 사용자명
+    password: # 로컬 MySQL 비밀번호
+```
+
+MySQL이 다른 주소나 포트에서 실행 중이면 URL의 `localhost:3306`을 해당 값으로 바꾸세요. 
+`username`과 `password`에는 위에서 생성한 데이터베이스에 접근할 MySQL 계정 정보를 입력합니다. 
+이 파일에 실제 비밀번호를 넣을 경우 커밋하지 않도록 주의하세요. 
+운영 배포에서는 운영 DB 접속 정보를 별도로 관리해야 합니다.
 
 ### 4. Spring Boot 애플리케이션 실행
 
