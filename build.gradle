@@ -1,0 +1,52 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.1.2'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'org.sopt'
+version = '0.0.1-SNAPSHOT'
+description = 'lottecinema-backend'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+// AWS SDK BOM 버전 관리 (2.x 표준)
+dependencyManagement {
+    imports {
+        mavenBom 'software.amazon.awssdk:bom:2.29.35'
+    }
+}
+
+dependencies {
+    // Web & REST API
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Spring Data JPA & MySQL
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // AWS S3
+    implementation 'software.amazon.awssdk:s3'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
