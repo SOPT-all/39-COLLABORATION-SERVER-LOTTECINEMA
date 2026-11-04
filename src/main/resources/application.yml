@@ -1,31 +1,24 @@
 spring:
-  application:
-    name: lottecinema-backend
-
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:${DB_PORT:3307}/${DB_NAME:lottecinema}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root1234}
+    url: jdbc:mysql://localhost:${MYSQL_LOCAL_PORT:3307}/${MYSQL_DATABASE:lottecinema}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root1234}
     driver-class-name: com.mysql.cj.jdbc.Driver
-
   jpa:
-    hibernate:
-      ddl-auto: ${DDL_AUTO:update}
     open-in-view: false
+    hibernate:
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
+        show_sql: true
 
+# AWS S3
 cloud:
   aws:
-    region: ap-northeast-2
+    region: ${AWS_REGION:ap-northeast-2}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:}
     s3:
-      bucket: ${S3_BUCKET:}
-
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger.html
-    tags-sorter: alpha
-    operations-sorter: method
+      bucket: ${AWS_S3_BUCKET:}

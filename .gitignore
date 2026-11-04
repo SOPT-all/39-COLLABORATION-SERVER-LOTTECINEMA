@@ -36,7 +36,6 @@ out/
 ### VS Code ###
 .vscode/
 
-# 민감 설정 파일
-**/application-local.yml
-**/application-prod.yml
-**/application-secret.yml
+# 환경 변수 민감 파일 제외
+.env
+.env.local
