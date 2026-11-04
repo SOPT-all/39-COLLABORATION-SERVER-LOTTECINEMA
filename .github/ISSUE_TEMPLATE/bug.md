@@ -1,5 +1,5 @@
 ---
-name: 🐛 오류 이슈
+name: BUG TEMPLATE
 about: 발생한 버그를 등록합니다
 title: "[Fix] "
 labels: ["bug"]

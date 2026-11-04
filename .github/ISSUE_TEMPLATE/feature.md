@@ -1,5 +1,5 @@
 ---
-name: ✨ 기능 이슈
+name: ✨ ISSUE TEMPLATE
 about: 새로운 기능 구현을 등록합니다
 title: "[Feat] "
 labels: ["feat"]
