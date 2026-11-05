@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/lottecinema
-    username: # local mysql username
-    password: # local mysql password
+    url: "jdbc:mysql://localhost:3306/lottecinema?createDatabaseIfNotExist=true" #lottecinema 데이터베이스가 없으면 MySQL 드라이버가 생성
+    username: ${DB_USERNAME:root} # local mysql username
+    password: ${DB_PASSWORD} # local mysql password
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     open-in-view: false
