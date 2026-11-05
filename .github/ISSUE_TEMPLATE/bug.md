@@ -1,6 +1,6 @@
 ---
-name: [BUG TEMPLATE]
-about: 발생한 버그를 등록합니다
+name: "[BUG TEMPLATE]"
+about: "발생한 버그를 등록합니다"
 title: "[Fix] "
 labels: ["bug"]
 ---
