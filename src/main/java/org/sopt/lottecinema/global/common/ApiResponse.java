@@ -14,21 +14,24 @@ public class ApiResponse<T> {
     private final String message;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final String code;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private final T data;
 
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(200, "OK", data);
+        return new ApiResponse<>(200, "OK", null, data);
     }
 
     public static ApiResponse<Void> success() {
-        return new ApiResponse<>(200, "OK", null);
+        return new ApiResponse<>(200, "OK", null, null);
     }
 
     public static ApiResponse<Void> fail(ErrorCode errorCode) {
-        return new ApiResponse<>(errorCode.getHttpStatus().value(), errorCode.getMessage(), null);
+        return new ApiResponse<>(errorCode.getHttpStatus().value(), errorCode.getMessage(), errorCode.getCode(), null);
     }
 
     public static ApiResponse<Void> fail(ErrorCode errorCode, String message) {
-        return new ApiResponse<>(errorCode.getHttpStatus().value(), message, null);
+        return new ApiResponse<>(errorCode.getHttpStatus().value(), message, errorCode.getCode(), null);
     }
 }
