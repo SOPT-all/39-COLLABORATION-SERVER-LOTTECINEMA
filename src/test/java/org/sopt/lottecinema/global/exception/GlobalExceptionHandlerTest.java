@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Min;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
@@ -14,7 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.sopt.lottecinema.global.common.ApiResponse;
+import org.sopt.lottecinema.global.common.SuccessResponse;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -47,7 +49,9 @@ class GlobalExceptionHandlerTest {
         mvc.perform(post("/test").contentType(MediaType.APPLICATION_JSON).content("{"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST_BODY"));
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST_BODY"))
+                .andExpect(jsonPath("$.data").doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.errors").doesNotHaveJsonPath());
     }
 
     @Test
@@ -95,16 +99,47 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").doesNotExist());
     }
 
+    @Test
+    void returnsCreatedResponse() throws Exception {
+        mvc.perform(post("/created"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value(201))
+                .andExpect(jsonPath("$.message").value("Created"))
+                .andExpect(jsonPath("$.data").value("created"))
+                .andExpect(jsonPath("$.code").doesNotExist())
+                .andExpect(jsonPath("$.errors").doesNotExist());
+    }
+
+    @Test
+    void includesNullDataOnSuccessWithoutData() throws Exception {
+        mvc.perform(get("/empty"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").hasJsonPath())
+                .andExpect(jsonPath("$.data").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.code").doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.errors").doesNotHaveJsonPath());
+    }
+
     @RestController
     static class TestController {
+        @GetMapping("/empty")
+        SuccessResponse<Void> getEmpty() {
+            return SuccessResponse.success();
+        }
+
+        @PostMapping("/created")
+        ResponseEntity<SuccessResponse<String>> createResource() {
+            return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.created("created"));
+        }
+
         @PostMapping("/test")
         String create(@Valid @RequestBody TestRequest request) {
             return "ok";
         }
 
         @GetMapping("/test")
-        ApiResponse<String> get(@RequestParam("number") @Min(1) int number) {
-            return ApiResponse.success("ok");
+        SuccessResponse<String> get(@RequestParam("number") @Min(1) int number) {
+            return SuccessResponse.success("ok");
         }
     }
 
