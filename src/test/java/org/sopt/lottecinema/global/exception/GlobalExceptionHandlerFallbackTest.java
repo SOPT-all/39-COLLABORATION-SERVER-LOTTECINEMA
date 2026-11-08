@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -30,10 +31,19 @@ class GlobalExceptionHandlerFallbackTest {
     }
 
     @Test
-    void preservesSpringExceptionStatus() throws Exception {
+    void preservesSpringExceptionStatusWithGenericClientErrorCode() throws Exception {
         mvc.perform(get("/status"))
                 .andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.status").value(429));
+                .andExpect(jsonPath("$.status").value(429))
+                .andExpect(jsonPath("$.code").value("CLIENT_ERROR"));
+    }
+
+    @Test
+    void returnsInternalErrorWhenParameterConverterIsMissing() throws Exception {
+        mvc.perform(get("/unsupported-conversion").param("value", "1"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"));
     }
 
     @Test
@@ -70,6 +80,11 @@ class GlobalExceptionHandlerFallbackTest {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS);
         }
 
+        @GetMapping("/unsupported-conversion")
+        String unsupportedConversion(@RequestParam("value") UnsupportedParameter value) {
+            return "ok";
+        }
+
         @GetMapping("/failure")
         String failure() {
             throw new IllegalStateException("internal detail");
@@ -79,5 +94,8 @@ class GlobalExceptionHandlerFallbackTest {
         String json() {
             return "{}";
         }
+    }
+
+    record UnsupportedParameter(int value) {
     }
 }

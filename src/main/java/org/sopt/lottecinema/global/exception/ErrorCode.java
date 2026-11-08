@@ -9,6 +9,9 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public enum ErrorCode {
 
+    // 별도 매핑이 없는 4xx 응답은 Spring이 정한 HTTP 상태를 사용합니다.
+    CLIENT_ERROR(HttpStatus.BAD_REQUEST, "CLIENT_ERROR", "요청을 처리할 수 없습니다."),
+
     // 400 Bad Request
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "잘못된 요청입니다."),
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "입력값을 확인해 주세요."),

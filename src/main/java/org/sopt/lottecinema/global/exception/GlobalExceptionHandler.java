@@ -5,6 +5,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.sopt.lottecinema.global.common.ErrorResponse;
 import org.sopt.lottecinema.global.common.ValidationError;
+import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.ResponseEntity;
@@ -85,6 +86,12 @@ public class GlobalExceptionHandler {
         return respond(ErrorCode.INVALID_PARAMETER_TYPE);
     }
 
+    @ExceptionHandler(ConversionNotSupportedException.class)
+    protected ResponseEntity<ErrorResponse> handleConversionNotSupported(ConversionNotSupportedException ex) {
+        log.error("요청 인자를 변환하는 중 서버 오류가 발생했습니다.", ex);
+        return respond(ErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
     // 메서드 인자 외의 값을 필요한 타입으로 변환하지 못한 경우
     @ExceptionHandler(TypeMismatchException.class)
     protected ResponseEntity<ErrorResponse> handleOtherTypeMismatch(TypeMismatchException ex) {
@@ -127,7 +134,7 @@ public class GlobalExceptionHandler {
         // Spring에서 상태를 지정한 예외는 해당 상태와 헤더를 유지합니다.
         if (ex instanceof org.springframework.web.ErrorResponse errorResponse) {
             var status = errorResponse.getStatusCode();
-            ErrorCode errorCode = status.is4xxClientError() ? ErrorCode.BAD_REQUEST : ErrorCode.INTERNAL_SERVER_ERROR;
+            ErrorCode errorCode = status.is4xxClientError() ? ErrorCode.CLIENT_ERROR : ErrorCode.INTERNAL_SERVER_ERROR;
             if (status.is5xxServerError()) {
                 log.error("요청 처리 중 서버 오류가 발생했습니다.", ex);
             }
