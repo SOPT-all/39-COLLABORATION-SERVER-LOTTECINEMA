@@ -2,17 +2,15 @@ package org.sopt.lottecinema.global.exception;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.sopt.lottecinema.global.common.ApiResponse;
 import org.sopt.lottecinema.global.common.ValidationError;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -22,131 +20,127 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+@Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException ex) {
-        ErrorCode code = ex.getErrorCode();
-        return ResponseEntity.status(code.getHttpStatus()).body(ApiResponse.fail(code, ex.getMessage()));
+        ErrorCode errorCode = ex.getErrorCode();
+        return ResponseEntity.status(errorCode.getHttpStatus())
+                .body(ApiResponse.fail(errorCode, ex.getMessage()));
     }
 
-    @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         List<ValidationError> errors = ex.getBindingResult().getAllErrors().stream()
                 .map(error -> new ValidationError(error instanceof FieldError field ? field.getField() : null,
                         error.getDefaultMessage()))
                 .toList();
-        return super.handleExceptionInternal(ex, ApiResponse.fail(ErrorCode.VALIDATION_FAILED, errors),
-                headers, status, request);
+        return ResponseEntity.status(ErrorCode.VALIDATION_FAILED.getHttpStatus())
+                .body(ApiResponse.fail(ErrorCode.VALIDATION_FAILED, errors));
     }
 
-    @Override
-    protected ResponseEntity<Object> handleHandlerMethodValidationException(HandlerMethodValidationException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        if (status.is5xxServerError()) {
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleMethodValidation(HandlerMethodValidationException ex) {
+        if (ex.isForReturnValue()) {
             log.error("응답 검증 중 서버 오류가 발생했습니다.", ex);
-            return respond(ex, headers, status, request, ErrorCode.INTERNAL_SERVER_ERROR);
+            return respond(ErrorCode.INTERNAL_SERVER_ERROR);
         }
+
         List<ValidationError> errors = new ArrayList<>();
         ex.getParameterValidationResults().forEach(result ->
-                result.getResolvableErrors().forEach(error -> errors.add(new ValidationError(
-                        getParameterName(result.getMethodParameter()), error.getDefaultMessage()))));
+                result.getResolvableErrors().forEach(error -> errors.add(
+                        new ValidationError(getParameterName(result.getMethodParameter()), error.getDefaultMessage()))));
         ex.getCrossParameterValidationResults().forEach(error ->
                 errors.add(new ValidationError(null, error.getDefaultMessage())));
-        return super.handleExceptionInternal(ex, ApiResponse.fail(ErrorCode.VALIDATION_FAILED, errors),
-                headers, status, request);
+        return ResponseEntity.status(ErrorCode.VALIDATION_FAILED.getHttpStatus())
+                .body(ApiResponse.fail(ErrorCode.VALIDATION_FAILED, errors));
     }
 
-    @Override
-    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return respond(ex, headers, status, request, ErrorCode.MALFORMED_REQUEST_BODY);
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        return respond(ErrorCode.MALFORMED_REQUEST_BODY);
     }
 
-    @Override
-    protected ResponseEntity<Object> handleMissingServletRequestParameter(MissingServletRequestParameterException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return respond(ex, headers, status, request, ErrorCode.MISSING_PARAMETER);
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleMissingParameter(MissingServletRequestParameterException ex) {
+        return respond(ErrorCode.MISSING_PARAMETER);
     }
 
-    @Override
-    protected ResponseEntity<Object> handleTypeMismatch(TypeMismatchException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        ErrorCode code = ex instanceof MethodArgumentTypeMismatchException
-                ? ErrorCode.INVALID_PARAMETER_TYPE : ErrorCode.BAD_REQUEST;
-        return respond(ex, headers, status, request, code);
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return respond(ErrorCode.INVALID_PARAMETER_TYPE);
     }
 
-    @Override
-    protected ResponseEntity<Object> handleNoHandlerFoundException(NoHandlerFoundException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return respond(ex, headers, status, request, ErrorCode.NOT_FOUND);
+    @ExceptionHandler(TypeMismatchException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleOtherTypeMismatch(TypeMismatchException ex) {
+        return respond(ErrorCode.BAD_REQUEST);
     }
 
-    @Override
-    protected ResponseEntity<Object> handleNoResourceFoundException(NoResourceFoundException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return respond(ex, headers, status, request, ErrorCode.NOT_FOUND);
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    protected ResponseEntity<ApiResponse<Void>> handleNotFound(Exception ex) {
+        return respond(ErrorCode.NOT_FOUND);
     }
 
-    @Override
-    protected ResponseEntity<Object> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return respond(ex, headers, status, request, ErrorCode.METHOD_NOT_ALLOWED);
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        ErrorCode errorCode = ErrorCode.METHOD_NOT_ALLOWED;
+        return ResponseEntity.status(errorCode.getHttpStatus())
+                .headers(ex.getHeaders())
+                .body(ApiResponse.fail(errorCode));
     }
 
-    @Override
-    protected ResponseEntity<Object> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return respond(ex, headers, status, request, ErrorCode.UNSUPPORTED_MEDIA_TYPE);
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
+        ErrorCode errorCode = ErrorCode.UNSUPPORTED_MEDIA_TYPE;
+        return ResponseEntity.status(errorCode.getHttpStatus())
+                .headers(ex.getHeaders())
+                .body(ApiResponse.fail(errorCode));
     }
 
-    @Override
-    protected ResponseEntity<Object> handleHttpMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException ex,
-            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return super.handleExceptionInternal(ex, null, headers, status, request);
-    }
-
-    @Override
-    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
-            HttpStatusCode status, WebRequest request) {
-        ErrorCode code = status.is4xxClientError() ? ErrorCode.BAD_REQUEST : ErrorCode.INTERNAL_SERVER_ERROR;
-        if (status.is5xxServerError()) {
-            log.error("요청 처리 중 서버 오류가 발생했습니다.", ex);
-        }
-        return respond(ex, headers, status, request, code);
-    }
-
-    private ResponseEntity<Object> respond(Exception ex, HttpHeaders headers, HttpStatusCode status,
-            WebRequest request, ErrorCode code) {
-        return super.handleExceptionInternal(ex, ApiResponse.fail(status.value(), code), headers, status, request);
-    }
-
-    private String getParameterName(MethodParameter parameter) {
-        RequestParam requestParam = parameter.getParameterAnnotation(RequestParam.class);
-        if (requestParam != null && !requestParam.name().isEmpty()) return requestParam.name();
-        if (requestParam != null && !requestParam.value().isEmpty()) return requestParam.value();
-        PathVariable pathVariable = parameter.getParameterAnnotation(PathVariable.class);
-        if (pathVariable != null && !pathVariable.name().isEmpty()) return pathVariable.name();
-        if (pathVariable != null && !pathVariable.value().isEmpty()) return pathVariable.value();
-        return parameter.getParameterName();
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    protected ResponseEntity<Void> handleNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
+        return ResponseEntity.status(ex.getStatusCode()).headers(ex.getHeaders()).build();
     }
 
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<ApiResponse<Void>> handleUnexpectedException(Exception ex) {
+        // Spring에서 상태를 지정한 예외는 해당 상태와 헤더를 유지합니다.
+        if (ex instanceof ErrorResponse errorResponse) {
+            var status = errorResponse.getStatusCode();
+            ErrorCode errorCode = status.is4xxClientError() ? ErrorCode.BAD_REQUEST : ErrorCode.INTERNAL_SERVER_ERROR;
+            if (status.is5xxServerError()) {
+                log.error("요청 처리 중 서버 오류가 발생했습니다.", ex);
+            }
+            return ResponseEntity.status(status)
+                    .headers(errorResponse.getHeaders())
+                    .body(ApiResponse.fail(status.value(), errorCode));
+        }
         log.error("요청 처리 중 서버 오류가 발생했습니다.", ex);
-        return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
-                .body(ApiResponse.fail(ErrorCode.INTERNAL_SERVER_ERROR));
+        return respond(ErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    private ResponseEntity<ApiResponse<Void>> respond(ErrorCode errorCode) {
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(ApiResponse.fail(errorCode));
+    }
+
+    private String getParameterName(MethodParameter parameter) {
+        RequestParam requestParam = parameter.getParameterAnnotation(RequestParam.class);
+        if (requestParam != null) {
+            if (!requestParam.name().isEmpty()) return requestParam.name();
+            if (!requestParam.value().isEmpty()) return requestParam.value();
+        }
+        PathVariable pathVariable = parameter.getParameterAnnotation(PathVariable.class);
+        if (pathVariable != null) {
+            if (!pathVariable.name().isEmpty()) return pathVariable.name();
+            if (!pathVariable.value().isEmpty()) return pathVariable.value();
+        }
+        return parameter.getParameterName();
     }
 }
