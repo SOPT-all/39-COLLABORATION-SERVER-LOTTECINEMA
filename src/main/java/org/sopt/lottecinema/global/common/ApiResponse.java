@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.sopt.lottecinema.global.exception.ErrorCode;
+import java.util.List;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -17,21 +18,28 @@ public class ApiResponse<T> {
     private final String code;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final List<ValidationError> errors;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private final T data;
 
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(200, "OK", null, data);
+        return new ApiResponse<>(200, "OK", null, null, data);
     }
 
     public static ApiResponse<Void> success() {
-        return new ApiResponse<>(200, "OK", null, null);
+        return new ApiResponse<>(200, "OK", null, null, null);
     }
 
     public static ApiResponse<Void> fail(ErrorCode errorCode) {
-        return new ApiResponse<>(errorCode.getHttpStatus().value(), errorCode.getMessage(), errorCode.getCode(), null);
+        return new ApiResponse<>(errorCode.getHttpStatus().value(), errorCode.getMessage(), errorCode.getCode(), null, null);
     }
 
     public static ApiResponse<Void> fail(ErrorCode errorCode, String message) {
-        return new ApiResponse<>(errorCode.getHttpStatus().value(), message, errorCode.getCode(), null);
+        return new ApiResponse<>(errorCode.getHttpStatus().value(), message, errorCode.getCode(), null, null);
+    }
+
+    public static ApiResponse<Void> fail(ErrorCode errorCode, List<ValidationError> errors) {
+        return new ApiResponse<>(errorCode.getHttpStatus().value(), errorCode.getMessage(), errorCode.getCode(), errors, null);
     }
 }

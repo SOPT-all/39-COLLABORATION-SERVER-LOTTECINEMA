@@ -1,6 +1,8 @@
 package org.sopt.lottecinema.global.exception;
 
 import org.sopt.lottecinema.global.common.ApiResponse;
+import org.sopt.lottecinema.global.common.ValidationError;
+import org.springframework.validation.FieldError;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,10 +22,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     protected ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        String message = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+        var errors = e.getBindingResult().getAllErrors().stream()
+                .map(error -> new ValidationError(error instanceof FieldError fieldError ? fieldError.getField() : null,
+                        error.getDefaultMessage()))
+                .toList();
         return ResponseEntity
-                .status(ErrorCode.BAD_REQUEST.getHttpStatus())
-                .body(ApiResponse.fail(ErrorCode.BAD_REQUEST, message));
+                .status(ErrorCode.VALIDATION_FAILED.getHttpStatus())
+                .body(ApiResponse.fail(ErrorCode.VALIDATION_FAILED, errors));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
