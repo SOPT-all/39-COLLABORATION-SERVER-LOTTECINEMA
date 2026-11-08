@@ -42,4 +42,8 @@ public class ApiResponse<T> {
     public static ApiResponse<Void> fail(ErrorCode errorCode, List<ValidationError> errors) {
         return new ApiResponse<>(errorCode.getHttpStatus().value(), errorCode.getMessage(), errorCode.getCode(), errors, null);
     }
+
+    public static ApiResponse<Void> fail(int status, ErrorCode errorCode) {
+        return new ApiResponse<>(status, errorCode.getMessage(), errorCode.getCode(), null, null);
+    }
 }
