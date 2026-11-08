@@ -65,7 +65,7 @@ Git-Flow 기반으로 상시 유지 브랜치와 기능별 보조 브랜치를 �
 
 ## 📂 프로젝트 구조
 
-도메인별로 연관된 구성 요소를 모아 비즈니스 로직의 응집도와 유지보수성을 높입니다.
+도메인을 먼저 나누고, 각 도메인 안에서 `controller`, `service`, `repository`, `entity`, `dto`로 역할을 구분합니다. 각 패키지는 해당 역할의 코드가 생길 때 추가합니다.
 
 ```text
 src
@@ -75,7 +75,10 @@ src
     │   │   ├── common       # 공통 응답 (예: ApiResponse)
     │   │   ├── config       # 공통 설정 (예: WebConfig, SwaggerConfig)
     │   │   └── exception    # 예외 처리 (예: GlobalExceptionHandler, ErrorCode)
-    │   └── [domain]         # 도메인별 Entity, Controller, Service, DTO
+    │   ├── movie
+    │   │   └── entity       # Movie, CurationType
+    │   └── [domain]
+    │       └── entity       # 해당 도메인의 JPA 엔티티와 관련 타입
     └── resources
         └── application.yml  # 로컬/배포 환경의 DB 및 애플리케이션 설정
 
