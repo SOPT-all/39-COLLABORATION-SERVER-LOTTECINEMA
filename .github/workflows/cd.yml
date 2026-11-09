@@ -1,0 +1,83 @@
+name: CD
+
+# dev의 CI가 완료되면 결과를 확인한 뒤 배포 여부를 결정한다.
+"on":
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [dev]
+
+jobs:
+  deploy:
+    # PR의 CI 결과나 다른 저장소의 실행은 배포 권한을 받지 않는다.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'dev' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # 배포는 한 번에 하나씩 처리한다.
+    concurrency:
+      group: lottecinema-dev-deploy
+      queue: max
+    permissions:
+      actions: read # CI 실행의 산출물을 내려받는다.
+      contents: read
+      id-token: write # OIDC를 통해 AWS 임시 자격 증명을 받는다.
+    env:
+      DEPLOY_BUCKET: ${{ vars.DEPLOY_BUCKET }}
+      DEPLOY_INSTANCE_ID: ${{ vars.DEPLOY_INSTANCE_ID }}
+      DEPLOY_DOCUMENT_NAME: ${{ vars.DEPLOY_DOCUMENT_NAME }}
+      # CD의 GITHUB_SHA가 아니라 CI가 실제 테스트한 커밋을 배포한다.
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Download tested JAR
+        uses: actions/download-artifact@v8
+        with:
+          name: spring-boot-jar-${{ github.event.workflow_run.run_attempt }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          aws-region: ap-northeast-2
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+      - name: Upload release and deploy
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # 대기하는 동안 더 새로운 커밋이 병합됐다면 이전 커밋은 배포하지 않는다.
+          latest=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/dev" --jq '.object.sha')
+          if [[ "$latest" != "$RELEASE_SHA" ]]; then
+            echo "Skipping superseded commit $RELEASE_SHA"
+            exit 0
+          fi
+
+          # 테스트한 커밋 SHA별로 JAR를 보관하고 EC2의 SSM 배포 문서를 실행한다.
+          aws s3api put-object --bucket "$DEPLOY_BUCKET" \
+            --key "releases/$RELEASE_SHA/app.jar" --body lottecinema-0.0.1-SNAPSHOT.jar >/dev/null
+          command_id=$(aws ssm send-command --instance-ids "$DEPLOY_INSTANCE_ID" \
+            --document-name "$DEPLOY_DOCUMENT_NAME" --parameters "Release=$RELEASE_SHA" \
+            --timeout-seconds 120 --query Command.CommandId --output text)
+          echo "SSM command: $command_id"
+
+          # 명령이 EC2에 도착하고 배포가 끝날 때까지 상태를 확인한다.
+          for attempt in $(seq 1 90); do
+            if result=$(aws ssm get-command-invocation --command-id "$command_id" \
+                --instance-id "$DEPLOY_INSTANCE_ID" --output json 2>&1); then
+              case "$(jq -r '.Status' <<<"$result")" in
+                Success) jq -r '.StandardOutputContent' <<<"$result"; exit 0 ;;
+                Pending|InProgress|Delayed|Cancelling) ;;
+                *) jq -r '.Status, .StandardOutputContent, .StandardErrorContent' <<<"$result"; exit 1 ;;
+              esac
+            elif [[ "$result" != *InvocationDoesNotExist* ]]; then
+              printf '%s\n' "$result" >&2
+              exit 1
+            fi
+            sleep 5
+          done
+          echo 'Timed out waiting for SSM' >&2
+          exit 1

@@ -1,0 +1,56 @@
+name: CI
+
+# dev 대상 PR과 dev에 반영된 커밋의 빌드·테스트를 검증한다.
+"on":
+  pull_request:
+    branches: [dev]
+  push:
+    branches: [dev]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Spring 컨텍스트 테스트에서 사용할 임시 MySQL이다.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: lottecinema
+          MYSQL_USER: ci
+          MYSQL_PASSWORD: ci-only-password
+          MYSQL_ROOT_PASSWORD: ci-only-root-password
+        ports:
+          - 3306/tcp
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      # Gradle을 실행하고 테스트 결과를 확인한다.
+      - name: Build and test
+        env:
+          DB_USERNAME: ci
+          DB_PASSWORD: ci-only-password
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:${{ job.services.mysql.ports[3306] }}/lottecinema?sslMode=REQUIRED
+        run: bash ./gradlew build
+      # dev push에서 성공한 실행의 JAR를 CD에 전달한다.
+      # 재실행 시에도 정확한 시도의 산출물을 찾도록 시도 번호를 이름에 포함한다.
+      - name: Upload executable JAR
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v7
+        with:
+          name: spring-boot-jar-${{ github.run_attempt }}
+          path: build/libs/lottecinema-0.0.1-SNAPSHOT.jar
+          if-no-files-found: error
+          retention-days: 7
