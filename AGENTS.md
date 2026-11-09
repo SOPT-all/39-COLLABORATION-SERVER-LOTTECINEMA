@@ -18,7 +18,7 @@
 
 ## API, DB, 설정
 
-- 새 API의 Swagger 문서용 어노테이션은 해당 도메인의 `controller` 패키지에 있는 별도 인터페이스에 두고, 컨트롤러가 그 인터페이스를 구현하게 합니다. 공통 응답은 `ApiResponse`, 비즈니스 예외는 `BusinessException`, `ErrorCode`, `GlobalExceptionHandler`를 활용합니다.
+- 새 API의 Swagger 문서용 어노테이션은 해당 도메인의 `controller` 패키지에 있는 별도 인터페이스에 두고, 컨트롤러가 그 인터페이스를 구현하게 합니다. 성공 응답은 `SuccessResponse`, 오류 응답은 `ErrorResponse`, 비즈니스 예외는 `BusinessException`, `ErrorCode`, `GlobalExceptionHandler`를 활용합니다.
 - API 경로는 소문자 명사를 사용합니다. 컬렉션은 복수형으로 쓰고 여러 단어는 하이픈으로 연결합니다. 동작은 HTTP 메서드로, 필터는 쿼리 파라미터로 표현합니다. JSON 필드와 쿼리 파라미터는 `lowerCamelCase`로 작성합니다.
 - 새 테이블은 소문자 단수형 `snake_case`로 명명합니다. 기본 키는 `id`, 외래 키 컬럼은 `<참조 대상>_id`, 일반 컬럼은 소문자 `snake_case`를 사용합니다. Boolean 컬럼은 `is_active`처럼 의미가 드러나게 작성합니다.
 - 공통 설정은 `application.yml`에 두고, 환경별 설정은 필요한 프로필 파일에 분리합니다. 비밀번호와 API 키는 환경변수로 주입하고 저장소에 기록하지 않습니다.

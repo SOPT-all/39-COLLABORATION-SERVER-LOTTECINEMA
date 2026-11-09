@@ -85,7 +85,7 @@ src
 └── main
     ├── java/org/sopt/lottecinema
     │   ├── global
-    │   │   ├── common       # 공통 응답 (예: ApiResponse)
+    │   │   ├── common       # 공통 응답 (예: SuccessResponse, ErrorResponse)
     │   │   ├── config       # 공통 설정 (예: WebConfig, SwaggerConfig)
     │   │   └── exception    # 예외 처리 (예: GlobalExceptionHandler, ErrorCode)
     │   ├── movie
