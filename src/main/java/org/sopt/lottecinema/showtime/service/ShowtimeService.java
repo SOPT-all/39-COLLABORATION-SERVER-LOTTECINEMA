@@ -23,14 +23,14 @@ public class ShowtimeService {
     private static class RegionBuilder{
         private final Long regionId;
         private final String regionName;
-        private final Map<Long, MovieCinemaResponse.CinemaReponse> cinemas =
+        private final Map<Long, MovieCinemaResponse.CinemaResponse> cinemas =
                 new LinkedHashMap<>();
         private RegionBuilder(Long regionId, String regionName){
             this.regionId = regionId;
             this.regionName = regionName;
         }
-        private  MovieCinemaResponse.RegionReponse toResponse(){
-            return new MovieCinemaResponse.RegionReponse(
+        private  MovieCinemaResponse.RegionResponse toResponse(){
+            return new MovieCinemaResponse.RegionResponse(
                     regionId,
                     regionName,
                     List.copyOf(cinemas.values())
@@ -53,14 +53,14 @@ public class ShowtimeService {
             );
             region.cinemas.putIfAbsent(
                     row.getCinemaId(),
-                    new MovieCinemaResponse.CinemaReponse(
+                    new MovieCinemaResponse.CinemaResponse(
                             row.getCinemaId(),
                             row.getCinemaName()
                     )
             );
         }
 
-        List<MovieCinemaResponse.RegionReponse> regionReponses =
+        List<MovieCinemaResponse.RegionResponse> regionReponses =
                 regions.values().stream()
                         .map(RegionBuilder::toResponse)
                         .toList();

@@ -4,15 +4,15 @@ import java.util.List;
 
 // 영화별 지역 및 영화관 목록의 최상위 응답
 public record MovieCinemaResponse(
-        List<RegionReponse> regions
+        List<RegionResponse> regions
 ) {
-    public record RegionReponse(
+    public record RegionResponse(
             Long regionId,
             String regionName,
-            List <CinemaReponse> cinemas
+            List <CinemaResponse> cinemas
     ){}
 
-    public record CinemaReponse(
+    public record CinemaResponse(
             Long cinemaId,
             String cinemaName
     ){}
