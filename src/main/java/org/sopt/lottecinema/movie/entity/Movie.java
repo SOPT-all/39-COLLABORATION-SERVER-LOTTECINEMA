@@ -77,6 +77,22 @@ public class Movie {
             String ageRating,
             LocalDate releaseDate,
             CurationType curationType,
+            Short popularityRank,
+            BigDecimal bookingRate,
+            BigDecimal movieRating
+    ) {
+        this(title, posterUrl, genre, runtimeMinutes, ageRating, releaseDate,
+                curationType, null, popularityRank, bookingRate, movieRating);
+    }
+
+    public Movie(
+            String title,
+            String posterUrl,
+            String genre,
+            short runtimeMinutes,
+            String ageRating,
+            LocalDate releaseDate,
+            CurationType curationType,
             Short curationOrder,
             Short popularityRank,
             BigDecimal bookingRate,

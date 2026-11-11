@@ -66,4 +66,13 @@ class MovieServiceTest {
 
         assertThat(result).isEmpty();
     }
+
+    @Test
+    void createsMovieWithExistingConstructorWithoutCurationOrder() {
+        Movie movie = new Movie("예매 테스트", null, "애니메이션", (short) 100, "ALL",
+                LocalDate.of(2026, 11, 1), null, null, BigDecimal.ONE, BigDecimal.ONE);
+
+        assertThat(movie.getCurationOrder()).isNull();
+        assertThat(movie.getPopularityRank()).isNull();
+    }
 }
