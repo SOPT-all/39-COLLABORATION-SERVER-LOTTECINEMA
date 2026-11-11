@@ -14,11 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Transactional(readOnly = true)
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/movies")
-public class ShowtimeController {
+public class ShowtimeController implements ShowtimeAPI{
     private final ShowtimeService showtimeService;
 
-    @GetMapping("/{movieId}/cinemas")
+    @Override
     public SuccessResponse<MovieCinemaResponse> getCinemaByMovieId(
             @PathVariable
             @Positive(message = "영화 ID는 1 이상이어야 합니다.")
