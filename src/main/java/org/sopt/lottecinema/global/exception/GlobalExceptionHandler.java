@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterErrors;
 
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -35,6 +36,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
         ErrorCode errorCode = ex.getErrorCode();
+        if (ex.getErrors() != null) {
+            return ResponseEntity.status(errorCode.getHttpStatus())
+                    .body(ErrorResponse.fail(errorCode, ex.getErrors()));
+        }
         return ResponseEntity.status(errorCode.getHttpStatus())
                 .body(ErrorResponse.fail(errorCode, ex.getMessage()));
     }
@@ -60,9 +65,16 @@ public class GlobalExceptionHandler {
         }
 
         List<ValidationError> errors = new ArrayList<>();
-        ex.getParameterValidationResults().forEach(result ->
+        ex.getParameterValidationResults().forEach(result -> {
+            // 경로 제약과 @Valid 본문을 함께 검사해도 ticketCounts.adult 같은 중첩 필드명을 보존한다.
+            if (result instanceof ParameterErrors parameterErrors) {
+                parameterErrors.getAllErrors().forEach(error -> errors.add(new ValidationError(
+                        error instanceof FieldError field ? field.getField() : null, error.getDefaultMessage())));
+            } else {
                 result.getResolvableErrors().forEach(error -> errors.add(
-                        new ValidationError(getParameterName(result.getMethodParameter()), error.getDefaultMessage()))));
+                        new ValidationError(getParameterName(result.getMethodParameter()), error.getDefaultMessage())));
+            }
+        });
         ex.getCrossParameterValidationResults().forEach(error ->
                 errors.add(new ValidationError(null, error.getDefaultMessage())));
         return ResponseEntity.status(ErrorCode.VALIDATION_FAILED.getHttpStatus())
@@ -147,10 +159,12 @@ public class GlobalExceptionHandler {
         return respond(ErrorCode.INTERNAL_SERVER_ERROR);
     }
 
+    /** 오류 코드에 정의된 HTTP 상태와 기본 메시지로 공통 오류 응답을 만든다. */
     private ResponseEntity<ErrorResponse> respond(ErrorCode errorCode) {
         return ResponseEntity.status(errorCode.getHttpStatus()).body(ErrorResponse.fail(errorCode));
     }
 
+    /** 검증 오류의 field에 사용할 명시적 쿼리·경로 이름을 찾고, 없으면 Java 파라미터명을 사용한다. */
     private String getParameterName(MethodParameter parameter) {
         RequestParam requestParam = parameter.getParameterAnnotation(RequestParam.class);
         if (requestParam != null) {
