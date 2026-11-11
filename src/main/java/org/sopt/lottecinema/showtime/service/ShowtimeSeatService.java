@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.sopt.lottecinema.global.exception.BusinessException;
 import org.sopt.lottecinema.global.exception.ErrorCode;
+import org.sopt.lottecinema.movie.entity.Movie;
+import org.sopt.lottecinema.screen.entity.Screen;
 import org.sopt.lottecinema.seat.repository.SeatRepository;
 import org.sopt.lottecinema.seat.repository.SeatStatus;
 import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse;
@@ -14,6 +16,8 @@ import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse.CinemaInfo;
 import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse.MovieInfo;
 import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse.ScreenInfo;
 import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse.SeatInfo;
+import org.sopt.lottecinema.showtime.dto.TicketPrices;
+import org.sopt.lottecinema.showtime.entity.Showtime;
 import org.sopt.lottecinema.showtime.repository.ShowtimeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -33,10 +37,10 @@ public class ShowtimeSeatService {
     /** 회차·좌석·단가를 동일 스냅샷에서 읽고 영속성 컨텍스트가 열려 있을 때 응답으로 변환한다. */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ShowtimeSeatResponse getShowtimeSeats(Long showtimeId) {
-        var showtime = showtimeRepository.findWithDetailsById(showtimeId)
+        Showtime showtime = showtimeRepository.findWithDetailsById(showtimeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "해당 상영 회차를 찾을 수 없습니다."));
-        var screen = showtime.getScreen();
-        var movie = showtime.getMovie();
+        Screen screen = showtime.getScreen();
+        Movie movie = showtime.getMovie();
         List<SeatStatus> statuses = seatRepository.findStatuses(screen.getId(), showtimeId);
         validateLayout(screen.getId(), statuses);
         List<SeatInfo> seats = statuses.stream()
@@ -46,7 +50,7 @@ public class ShowtimeSeatService {
 
         // 같은 좌석 목록에서 집계하므로 동시 예매가 발생해도 목록과 잔여석 수가 서로 어긋나지 않는다.
         int availableSeatCount = (int) statuses.stream().filter(seat -> !seat.reserved()).count();
-        var prices = ticketPriceReader.getTicketPrices(showtimeId);
+        TicketPrices prices = ticketPriceReader.getTicketPrices(showtimeId);
         return new ShowtimeSeatResponse(
                 showtime.getStartAt().atOffset(KST_OFFSET).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 showtime.getEndAt().atOffset(KST_OFFSET).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),

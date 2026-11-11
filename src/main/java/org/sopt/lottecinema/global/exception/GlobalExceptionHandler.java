@@ -8,6 +8,7 @@ import org.sopt.lottecinema.global.common.ValidationError;
 import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -133,7 +134,7 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ErrorResponse> handleUnexpectedException(Exception ex) {
         // Spring에서 상태를 지정한 예외는 해당 상태와 헤더를 유지합니다.
         if (ex instanceof org.springframework.web.ErrorResponse errorResponse) {
-            var status = errorResponse.getStatusCode();
+            HttpStatusCode status = errorResponse.getStatusCode();
             ErrorCode errorCode = status.is4xxClientError() ? ErrorCode.CLIENT_ERROR : ErrorCode.INTERNAL_SERVER_ERROR;
             if (status.is5xxServerError()) {
                 log.error("요청 처리 중 서버 오류가 발생했습니다.", ex);

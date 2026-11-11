@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.sopt.lottecinema.global.exception.BusinessException;
 import org.sopt.lottecinema.global.exception.ErrorCode;
 import org.sopt.lottecinema.showtime.dto.TicketPrices;
+import org.sopt.lottecinema.showtime.entity.ShowtimeTicketPrice;
 import org.sopt.lottecinema.showtime.repository.ShowtimeTicketPriceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,7 @@ public class ShowtimeTicketPriceReader {
     private final ShowtimeTicketPriceRepository priceRepository;
 
     public TicketPrices getTicketPrices(Long showtimeId) {
-        var price = priceRepository.findByShowtimeId(showtimeId).orElseThrow(() -> {
+        ShowtimeTicketPrice price = priceRepository.findByShowtimeId(showtimeId).orElseThrow(() -> {
             log.error("회차 단가가 등록되지 않았습니다. showtimeId={}", showtimeId);
             return new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
         });

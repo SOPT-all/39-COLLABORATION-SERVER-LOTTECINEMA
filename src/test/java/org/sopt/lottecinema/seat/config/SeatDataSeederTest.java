@@ -1,6 +1,7 @@
 package org.sopt.lottecinema.seat.config;
 
 import jakarta.persistence.EntityManager;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,9 +36,9 @@ class SeatDataSeederTest {
 
     @BeforeEach
     void setUp() {
-        var region = new Region("시딩-" + UUID.randomUUID().toString().substring(0, 8), (short) 0);
+        Region region = new Region("시딩-" + UUID.randomUUID().toString().substring(0, 8), (short) 0);
         entityManager.persist(region);
-        var cinema = new Cinema(region, "시딩 극장", (short) 0);
+        Cinema cinema = new Cinema(region, "시딩 극장", (short) 0);
         entityManager.persist(cinema);
         screen = new Screen(cinema, "1관", SeatType.STANDARD);
         entityManager.persist(screen);
@@ -48,8 +49,8 @@ class SeatDataSeederTest {
     @Test
     void seedsExactLayoutAndKeepsSeatIdsOnRepeatedStartup() throws Exception {
         seeder.run(new DefaultApplicationArguments());
-        var first = seatRepository.findByScreenId(screen.getId());
-        var firstIds = first.stream().map(Seat::getId).toList();
+        List<Seat> first = seatRepository.findByScreenId(screen.getId());
+        List<Long> firstIds = first.stream().map(Seat::getId).toList();
         assertThat(first).hasSize(77);
         assertThat(first).filteredOn(seat -> seat.getRowIndex() == 0).extracting(Seat::getSeatCode)
                 .containsExactlyInAnyOrder("A10", "A11");
@@ -72,12 +73,12 @@ class SeatDataSeederTest {
         entityManager.createNativeQuery("""
                 insert into seat (screen_id, seat_code, is_accessible) values (:screenId, 'B3', true)
                 """).setParameter("screenId", screen.getId()).executeUpdate();
-        var originalId = seatRepository.findByScreenId(screen.getId()).getFirst().getId();
+        Long originalId = seatRepository.findByScreenId(screen.getId()).getFirst().getId();
         entityManager.clear();
 
         seeder.run(new DefaultApplicationArguments());
         entityManager.clear();
-        var seats = seatRepository.findByScreenId(screen.getId());
+        List<Seat> seats = seatRepository.findByScreenId(screen.getId());
         assertThat(seats).hasSize(77);
         assertThat(seats).filteredOn(seat -> seat.getSeatCode().equals("B3")).singleElement().satisfies(seat -> {
             assertThat(seat.getId()).isEqualTo(originalId);
@@ -97,7 +98,7 @@ class SeatDataSeederTest {
 
     @Test
     void rejectsMissingTargetScreen() {
-        var missingScreenSeeder = new SeatDataSeeder(screenRepository, seatRepository, Long.MAX_VALUE);
+        SeatDataSeeder missingScreenSeeder = new SeatDataSeeder(screenRepository, seatRepository, Long.MAX_VALUE);
         assertThatThrownBy(() -> missingScreenSeeder.run(new DefaultApplicationArguments()))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("상영관이 없습니다");
     }

@@ -6,9 +6,11 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.sopt.lottecinema.screen.entity.Screen;
 import org.sopt.lottecinema.screen.repository.ScreenRepository;
 import org.sopt.lottecinema.seat.entity.Seat;
 import org.sopt.lottecinema.seat.repository.SeatRepository;
@@ -44,16 +46,16 @@ public class SeatDataSeeder implements ApplicationRunner {
         if (screenId == null || screenId < 1) {
             throw new IllegalArgumentException("SEAT_SEED_SCREEN_ID에 실제 상영관 ID를 지정해 주세요.");
         }
-        var layout = readLayout();
-        var screen = screenRepository.findByIdForUpdate(screenId)
+        List<SeatPosition> layout = readLayout();
+        Screen screen = screenRepository.findByIdForUpdate(screenId)
                 .orElseThrow(() -> new IllegalStateException("시딩할 상영관이 없습니다. screenId=" + screenId));
-        var existingSeats = seatRepository.findByScreenId(screenId);
+        List<Seat> existingSeats = seatRepository.findByScreenId(screenId);
         Map<String, SeatPosition> positions = layout.stream()
                 .collect(Collectors.toMap(SeatPosition::seatCode, Function.identity()));
 
         // 모든 기존 좌석을 먼저 확인한다. 다른 배치가 섞여 있으면 변경 전에 시작을 중단한다.
         for (Seat seat : existingSeats) {
-            var position = positions.get(seat.getSeatCode());
+            SeatPosition position = positions.get(seat.getSeatCode());
             if (position == null || (seat.getRowIndex() != null && seat.getRowIndex() != position.rowIndex())
                     || (seat.getColumnIndex() != null && seat.getColumnIndex() != position.columnIndex())) {
                 throw new IllegalStateException("기존 좌석과 시드 배치가 다릅니다. screenId=" + screenId
@@ -63,11 +65,11 @@ public class SeatDataSeeder implements ApplicationRunner {
 
         // 기존 행은 ID와 장애인석 표시를 유지하고, 빈 좌표만 JPA 변경 감지로 채운다.
         for (Seat seat : existingSeats) {
-            var position = positions.get(seat.getSeatCode());
+            SeatPosition position = positions.get(seat.getSeatCode());
             seat.initializePosition(position.rowIndex(), position.columnIndex());
         }
-        var existingCodes = existingSeats.stream().map(Seat::getSeatCode).collect(Collectors.toSet());
-        var newSeats = layout.stream().filter(position -> !existingCodes.contains(position.seatCode()))
+        Set<String> existingCodes = existingSeats.stream().map(Seat::getSeatCode).collect(Collectors.toSet());
+        List<Seat> newSeats = layout.stream().filter(position -> !existingCodes.contains(position.seatCode()))
                 .map(position -> new Seat(screen, position.seatCode(), position.rowIndex(), position.columnIndex(), null))
                 .toList();
         // 기존 행의 좌표 갱신을 먼저 반영하고 누락 좌석을 추가한다. 두 작업은 같은 트랜잭션이다.
@@ -77,11 +79,11 @@ public class SeatDataSeeder implements ApplicationRunner {
     }
 
     private List<SeatPosition> readLayout() throws IOException {
-        var resource = new ClassPathResource("seed/seats-12x15.csv");
-        try (var reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+        ClassPathResource resource = new ClassPathResource("seed/seats-12x15.csv");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
             // CSV에는 실제 좌석만 기록한다. 빈 칸과 마지막 빈 행은 화면의 12×15 그리드가 표현한다.
             return reader.lines().skip(1).map(line -> {
-                var fields = line.split(",");
+                String[] fields = line.split(",");
                 return new SeatPosition(fields[0], Integer.parseInt(fields[1]), Integer.parseInt(fields[2]));
             }).toList();
         }

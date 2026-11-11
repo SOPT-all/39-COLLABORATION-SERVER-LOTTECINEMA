@@ -24,6 +24,7 @@ import org.sopt.lottecinema.screen.entity.Screen;
 import org.sopt.lottecinema.screen.entity.SeatType;
 import org.sopt.lottecinema.seat.repository.SeatRepository;
 import org.sopt.lottecinema.seat.repository.SeatStatus;
+import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse;
 import org.sopt.lottecinema.showtime.dto.TicketPrices;
 import org.sopt.lottecinema.showtime.entity.FormatType;
 import org.sopt.lottecinema.showtime.entity.LanguageType;
@@ -49,8 +50,8 @@ class ShowtimeSeatServiceTest {
 
     @BeforeEach
     void setUp() {
-        var region = new Region("서울", (short) 0);
-        var cinema = new Cinema(region, "용산", (short) 0);
+        Region region = new Region("서울", (short) 0);
+        Cinema cinema = new Cinema(region, "용산", (short) 0);
         screen = new Screen(cinema, "4관", SeatType.RECLINER);
         ReflectionTestUtils.setField(screen, "id", 3L);
         movie = new Movie("테스트 영화", null, "애니메이션", (short) 109, "ALL",
@@ -65,10 +66,10 @@ class ShowtimeSeatServiceTest {
                 new SeatStatus("E1", 0, 0, false, true),
                 new SeatStatus("E3", 0, 2, true, false),
                 new SeatStatus("E4", 0, 3, false, null)));
-        var prices = new TicketPrices(15000, 12000, 10000, 10000);
+        TicketPrices prices = new TicketPrices(15000, 12000, 10000, 10000);
         when(ticketPriceReader.getTicketPrices(1203L)).thenReturn(prices);
 
-        var response = service.getShowtimeSeats(1203L);
+        ShowtimeSeatResponse response = service.getShowtimeSeats(1203L);
 
         assertThat(response.startAt()).isEqualTo("2020-11-12T14:25:00+09:00");
         assertThat(response.endAt()).isEqualTo("2020-11-12T16:14:00+09:00");
@@ -96,7 +97,7 @@ class ShowtimeSeatServiceTest {
         prepareShowtime(FormatType.TWO_D);
         when(seatRepository.findStatuses(3L, 1203L)).thenReturn(List.of());
         when(ticketPriceReader.getTicketPrices(1203L)).thenReturn(new TicketPrices(0, 0, 0, 0));
-        var response = service.getShowtimeSeats(1203L);
+        ShowtimeSeatResponse response = service.getShowtimeSeats(1203L);
         assertThat(response.availableSeatCount()).isZero();
         assertThat(response.totalSeatCount()).isZero();
         assertThat(response.seats()).isEmpty();
@@ -129,7 +130,7 @@ class ShowtimeSeatServiceTest {
     }
 
     private void prepareShowtime(FormatType format) {
-        var showtime = new Showtime(movie, screen, LocalDateTime.of(2020, 11, 12, 14, 25),
+        Showtime showtime = new Showtime(movie, screen, LocalDateTime.of(2020, 11, 12, 14, 25),
                 LocalDateTime.of(2020, 11, 12, 16, 14), format, LanguageType.NONE);
         when(showtimeRepository.findWithDetailsById(1203L)).thenReturn(Optional.of(showtime));
     }
