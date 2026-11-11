@@ -15,7 +15,7 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     @Query("""
             select new org.sopt.lottecinema.seat.repository.SeatStatus(
                 seat.seatCode, seat.rowIndex, seat.columnIndex,
-                case when reserved.id is not null then true else false end, seat.accessible)
+                case when reserved.id is not null then true else false end)
             from Seat seat
             left join ReservationSeat reserved on reserved.seat = seat and reserved.showtime.id = :showtimeId
             where seat.screen.id = :screenId

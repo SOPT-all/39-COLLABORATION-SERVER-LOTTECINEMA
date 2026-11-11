@@ -26,13 +26,12 @@ public record ShowtimeSeatResponse(
     public record ScreenInfo(String name, String seatType) {
     }
 
-    // Boolean null은 접근성 자료 미등록이므로 생략한다. 예약 여부는 항상 명시한다.
+    // 좌석의 화면 좌표와 해당 회차의 예약 여부를 제공한다.
     public record SeatInfo(
             String seatCode,
             int rowIndex,
             int columnIndex,
-            @JsonProperty("isReserved") boolean reserved,
-            @JsonProperty("isAccessible") @JsonInclude(JsonInclude.Include.NON_NULL) Boolean accessible
+            @JsonProperty("isReserved") boolean reserved
     ) {
     }
 }

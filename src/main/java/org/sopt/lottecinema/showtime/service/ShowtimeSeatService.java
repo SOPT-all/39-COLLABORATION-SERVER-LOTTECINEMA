@@ -45,7 +45,7 @@ public class ShowtimeSeatService {
         validateLayout(screen.getId(), statuses);
         List<SeatInfo> seats = statuses.stream()
                 .map(seat -> new SeatInfo(seat.seatCode(), seat.rowIndex(), seat.columnIndex(),
-                        seat.reserved(), seat.accessible()))
+                        seat.reserved()))
                 .toList();
 
         // 같은 좌석 목록에서 집계하므로 동시 예매가 발생해도 목록과 잔여석 수가 서로 어긋나지 않는다.

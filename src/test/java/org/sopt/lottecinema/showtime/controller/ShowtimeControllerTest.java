@@ -48,12 +48,12 @@ class ShowtimeControllerTest {
     }
 
     @Test
-    void returnsSeatContractWithExplicitNullAndOptionalAccessibility() throws Exception {
+    void returnsSeatContractWithExplicitNullPoster() throws Exception {
         when(service.getShowtimeSeats(1203L)).thenReturn(new ShowtimeSeatResponse(
                 "2026-11-12T14:25:00+09:00", "2026-11-12T16:14:00+09:00", "2D",
                 new MovieInfo("테스트 영화", null, "ALL"), new CinemaInfo("용산"), new ScreenInfo("4관", "RECLINER"),
-                2, 3, List.of(new SeatInfo("E1", 0, 0, false, true), new SeatInfo("E3", 0, 2, true, false),
-                new SeatInfo("E4", 0, 3, false, null)), new TicketPrices(15000, 12000, 10000, 10000)));
+                2, 3, List.of(new SeatInfo("E1", 0, 0, false), new SeatInfo("E3", 0, 2, true),
+                new SeatInfo("E4", 0, 3, false)), new TicketPrices(15000, 12000, 10000, 10000)));
 
         mvc.perform(get("/api/showtimes/1203/seats").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -65,9 +65,7 @@ class ShowtimeControllerTest {
                 .andExpect(jsonPath("$.data.availableSeatCount").value(2))
                 .andExpect(jsonPath("$.data.totalSeatCount").value(3))
                 .andExpect(jsonPath("$.data.seats[0].isReserved").value(false))
-                .andExpect(jsonPath("$.data.seats[0].isAccessible").value(true))
-                .andExpect(jsonPath("$.data.seats[1].isAccessible").value(false))
-                .andExpect(jsonPath("$.data.seats[2].isAccessible").doesNotHaveJsonPath())
+                .andExpect(jsonPath("$.data.seats[0].isAccessible").doesNotHaveJsonPath())
                 .andExpect(jsonPath("$.data.seats[0].reserved").doesNotHaveJsonPath())
                 .andExpect(jsonPath("$.data.ticketPrices.adult").value(15000));
     }

@@ -63,14 +63,14 @@ public class SeatDataSeeder implements ApplicationRunner {
             }
         }
 
-        // 기존 행은 ID와 장애인석 표시를 유지하고, 빈 좌표만 JPA 변경 감지로 채운다.
+        // 기존 행은 ID를 유지하고, 빈 좌표만 JPA 변경 감지로 채운다.
         for (Seat seat : existingSeats) {
             SeatPosition position = positions.get(seat.getSeatCode());
             seat.initializePosition(position.rowIndex(), position.columnIndex());
         }
         Set<String> existingCodes = existingSeats.stream().map(Seat::getSeatCode).collect(Collectors.toSet());
         List<Seat> newSeats = layout.stream().filter(position -> !existingCodes.contains(position.seatCode()))
-                .map(position -> new Seat(screen, position.seatCode(), position.rowIndex(), position.columnIndex(), null))
+                .map(position -> new Seat(screen, position.seatCode(), position.rowIndex(), position.columnIndex()))
                 .toList();
         // 기존 행의 좌표 갱신을 먼저 반영하고 누락 좌석을 추가한다. 두 작업은 같은 트랜잭션이다.
         seatRepository.flush();

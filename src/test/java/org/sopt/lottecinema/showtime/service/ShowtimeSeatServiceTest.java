@@ -63,9 +63,9 @@ class ShowtimeSeatServiceTest {
     void returnsSeatCountsPricesAndKoreanOffsetEvenAfterShowtimeStarted(FormatType format) {
         prepareShowtime(format);
         when(seatRepository.findStatuses(3L, 1203L)).thenReturn(List.of(
-                new SeatStatus("E1", 0, 0, false, true),
-                new SeatStatus("E3", 0, 2, true, false),
-                new SeatStatus("E4", 0, 3, false, null)));
+                new SeatStatus("E1", 0, 0, false),
+                new SeatStatus("E3", 0, 2, true),
+                new SeatStatus("E4", 0, 3, false)));
         TicketPrices prices = new TicketPrices(15000, 12000, 10000, 10000);
         when(ticketPriceReader.getTicketPrices(1203L)).thenReturn(prices);
 
@@ -87,7 +87,7 @@ class ShowtimeSeatServiceTest {
     @Test
     void returnsSoldOutSeats() {
         prepareShowtime(FormatType.TWO_D);
-        when(seatRepository.findStatuses(3L, 1203L)).thenReturn(List.of(new SeatStatus("A1", 0, 0, true, null)));
+        when(seatRepository.findStatuses(3L, 1203L)).thenReturn(List.of(new SeatStatus("A1", 0, 0, true)));
         when(ticketPriceReader.getTicketPrices(1203L)).thenReturn(new TicketPrices(0, 0, 0, 0));
         assertThat(service.getShowtimeSeats(1203L).availableSeatCount()).isZero();
     }
@@ -124,9 +124,9 @@ class ShowtimeSeatServiceTest {
     }
 
     static Stream<SeatStatus> invalidSeats() {
-        return Stream.of(new SeatStatus("A1", null, 0, false, null), new SeatStatus("A1", 0, null, false, null),
-                new SeatStatus("A1", -1, 0, false, null), new SeatStatus("A1", 0, -1, false, null),
-                new SeatStatus(" ", 0, 0, false, null));
+        return Stream.of(new SeatStatus("A1", null, 0, false), new SeatStatus("A1", 0, null, false),
+                new SeatStatus("A1", -1, 0, false), new SeatStatus("A1", 0, -1, false),
+                new SeatStatus(" ", 0, 0, false));
     }
 
     private void prepareShowtime(FormatType format) {

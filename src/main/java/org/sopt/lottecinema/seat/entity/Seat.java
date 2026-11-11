@@ -49,11 +49,7 @@ public class Seat {
     @Column(name = "column_index")
     private Integer columnIndex;
 
-    // null은 구분 자료가 없는 상태이며, 확인된 일반 좌석(false)과 구별한다.
-    @Column(name = "is_accessible")
-    private Boolean accessible;
-
-    public Seat(Screen screen, String seatCode, int rowIndex, int columnIndex, Boolean accessible) {
+    public Seat(Screen screen, String seatCode, int rowIndex, int columnIndex) {
         if (seatCode == null || seatCode.isBlank() || seatCode.length() > 10 || rowIndex < 0 || columnIndex < 0) {
             throw new IllegalArgumentException("좌석 번호와 행·열 위치를 확인해 주세요.");
         }
@@ -61,10 +57,9 @@ public class Seat {
         this.seatCode = seatCode;
         this.rowIndex = rowIndex;
         this.columnIndex = columnIndex;
-        this.accessible = accessible;
     }
 
-    /** 기존 좌석 ID와 접근성 정보를 유지하면서 미등록 좌표를 채운다. */
+    /** 기존 좌석 ID를 유지하면서 미등록 좌표를 채운다. */
     public void initializePosition(int rowIndex, int columnIndex) {
         if (rowIndex < 0 || columnIndex < 0
                 || (this.rowIndex != null && this.rowIndex != rowIndex)

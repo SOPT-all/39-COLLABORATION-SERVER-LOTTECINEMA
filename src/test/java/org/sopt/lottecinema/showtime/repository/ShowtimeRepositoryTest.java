@@ -59,11 +59,11 @@ class ShowtimeRepositoryTest {
         entityManager.persist(first);
         entityManager.persist(second);
         // 삽입 순서를 뒤집고 통로를 비워도 결과는 저장된 좌표 순서여야 한다.
-        Seat a3 = new Seat(screen, "A3", 0, 2, null);
-        Seat a1 = new Seat(screen, "A1", 0, 0, true);
+        Seat a3 = new Seat(screen, "A3", 0, 2);
+        Seat a1 = new Seat(screen, "A1", 0, 0);
         entityManager.persist(a3);
         entityManager.persist(a1);
-        entityManager.persist(new Seat(otherScreen, "B1", 0, 0, false));
+        entityManager.persist(new Seat(otherScreen, "B1", 0, 0));
         reserve(first, a1);
         reserve(second, a3);
         entityManager.persist(new ShowtimeTicketPrice(first, 15000, 12000, 10000, 10000));

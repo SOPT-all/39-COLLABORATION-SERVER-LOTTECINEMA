@@ -13,7 +13,7 @@ $env:SEAT_SEED_SCREEN_ID = "3"
 
 IntelliJ에서는 실행 설정의 Active profiles에 `seed`, 환경변수에 `SEAT_SEED_SCREEN_ID=3`을 지정한다. 다른 프로필과 함께 사용할 경우 `local,seed`처럼 활성화한다. 기존 DB 계정 환경변수도 해당 실행에 설정한다.
 
-동일 설정으로 다시 시작하면 기존 좌석 ID와 장애인석 표시를 유지하고, 누락 좌석과 빈 좌표를 채운다. 다른 좌석 번호나 충돌하는 좌표가 존재하면 전체 작업을 롤백하고 시작을 중단한다. 같은 상영관을 동시에 초기화하는 요청은 상영관 행 잠금으로 순서를 보장한다. 실제 요금은 아래 절차에 따라 회차별로 등록한다.
+동일 설정으로 다시 시작하면 기존 좌석 ID를 유지하고, 누락 좌석과 빈 좌표를 채운다. 다른 좌석 번호나 충돌하는 좌표가 존재하면 전체 작업을 롤백하고 시작을 중단한다. 같은 상영관을 동시에 초기화하는 요청은 상영관 행 잠금으로 순서를 보장한다. 실제 요금은 아래 절차에 따라 회차별로 등록한다.
 
 좌석이 없는 칸은 CSV에 포함하지 않는다. 화면에서는 12×15 그리드를 만들고 좌표에 좌석을 배치한다.
 
@@ -24,11 +24,10 @@ IntelliJ에서는 실행 설정의 Active profiles에 `seed`, 환경변수에 `S
 ```sql
 ALTER TABLE seat
     ADD COLUMN row_index INT NULL,
-    ADD COLUMN column_index INT NULL,
-    ADD COLUMN is_accessible BOOLEAN NULL;
+    ADD COLUMN column_index INT NULL;
 ```
 
-2. 확인된 상영관 배치 자료로 `row_index`와 `column_index`를 함께 채운다. 행과 열은 0부터 시작하며 통로 칸은 건너뛴다. 좌석 번호의 문자와 숫자만으로 통로 위치를 추정하지 않는다. 장애인석 구분이 미확인인 경우 `is_accessible`은 NULL로 유지한다.
+2. 확인된 상영관 배치 자료로 `row_index`와 `column_index`를 함께 채운다. 행과 열은 0부터 시작하며 통로 칸은 건너뛴다. 좌석 번호의 문자와 숫자만으로 통로 위치를 추정하지 않는다.
 3. 누락·음수·중복 좌표와 실제 배치 대비 누락 좌석을 확인한다. 아래 조회 결과가 모두 없어야 한다.
 
 ```sql
@@ -56,3 +55,11 @@ ALTER TABLE seat
 `showtime_ticket_price`에 노출할 회차마다 한 행을 등록한다. `showtime_id`는 유일한 외래 키다. `adult_price`, `teen_price`, `senior_price`, `disabled_price`는 원 단위 정수이며 각각 0~268435455 범위다. 팀에서 확인한 실제 요금을 입력한다. 단가 0원도 유효하다.
 
 현재 `ddl-auto: update`를 사용하는 환경에서는 테이블이 생성되지만 단가 행은 별도로 등록해야 한다. 자동 스키마 갱신이 없는 환경은 배포 전 동일한 엔티티 스키마를 적용한다. 운영 적용 여부는 `SHOW CREATE TABLE showtime_ticket_price`로 확인한다.
+
+## 기존 DB의 장애인석 구분 컬럼 제거
+
+장애인석 구분을 제거한 버전부터 좌석 엔티티와 API 응답은 해당 필드를 사용하지 않는다. 이전 버전이 생성한 DB에는 `is_accessible` 컬럼이 남을 수 있으므로 `SHOW COLUMNS FROM seat LIKE 'is_accessible'`로 존재 여부를 확인한 뒤 아래 SQL을 한 번 적용한다.
+
+```sql
+ALTER TABLE seat DROP COLUMN is_accessible;
+```

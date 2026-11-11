@@ -69,9 +69,9 @@ class SeatDataSeederTest {
     }
 
     @Test
-    void fillsLegacyCoordinatesWithoutReplacingSeatOrAccessibility() throws Exception {
+    void fillsLegacyCoordinatesWithoutReplacingSeat() throws Exception {
         entityManager.createNativeQuery("""
-                insert into seat (screen_id, seat_code, is_accessible) values (:screenId, 'B3', true)
+                insert into seat (screen_id, seat_code) values (:screenId, 'B3')
                 """).setParameter("screenId", screen.getId()).executeUpdate();
         Long originalId = seatRepository.findByScreenId(screen.getId()).getFirst().getId();
         entityManager.clear();
@@ -82,7 +82,6 @@ class SeatDataSeederTest {
         assertThat(seats).hasSize(77);
         assertThat(seats).filteredOn(seat -> seat.getSeatCode().equals("B3")).singleElement().satisfies(seat -> {
             assertThat(seat.getId()).isEqualTo(originalId);
-            assertThat(seat.getAccessible()).isTrue();
             assertThat(seat.getRowIndex()).isEqualTo(1);
             assertThat(seat.getColumnIndex()).isEqualTo(3);
         });
@@ -90,7 +89,7 @@ class SeatDataSeederTest {
 
     @Test
     void rejectsConflictingLayoutBeforeAddingSeats() {
-        seatRepository.saveAndFlush(new Seat(screen, "A10", 5, 10, false));
+        seatRepository.saveAndFlush(new Seat(screen, "A10", 5, 10));
         assertThatThrownBy(() -> seeder.run(new DefaultApplicationArguments()))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("A10");
         assertThat(seatRepository.findByScreenId(screen.getId())).hasSize(1);
