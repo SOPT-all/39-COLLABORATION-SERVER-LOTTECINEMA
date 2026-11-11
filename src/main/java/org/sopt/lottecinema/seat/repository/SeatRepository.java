@@ -11,6 +11,9 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     /** 해당 상영관에 속한 기존 좌석 목록을 조회한다. */
     List<Seat> findByScreenId(Long screenId);
 
+    /** 요청 좌석의 상영관 소속을 확인하며, 동시 저장의 잠금 순서를 맞추기 위해 ID 순으로 읽는다. */
+    List<Seat> findByScreenIdAndSeatCodeInOrderByIdAsc(Long screenId, List<String> seatCodes);
+
     // 회차 조건을 ON 절에 두어 미예매 좌석도 남긴다. 다른 회차의 같은 좌석 예매는 점유로 세지 않는다.
     @Query("""
             select new org.sopt.lottecinema.seat.repository.SeatStatus(
