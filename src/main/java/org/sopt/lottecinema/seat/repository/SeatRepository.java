@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface SeatRepository extends JpaRepository<Seat, Long> {
 
-    /** 시작 시 기존 좌석을 코드별로 비교해 누락된 좌석과 좌표만 보충한다. */
+    /** 해당 상영관에 속한 기존 좌석 목록을 조회한다. */
     List<Seat> findByScreenId(Long screenId);
 
     // 회차 조건을 ON 절에 두어 미예매 좌석도 남긴다. 다른 회차의 같은 좌석 예매는 점유로 세지 않는다.

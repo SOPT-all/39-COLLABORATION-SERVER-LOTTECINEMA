@@ -30,7 +30,7 @@ class SeatDataSeederTransactionTest {
 
     @Test
     void rollsBackAllScreensWhenLaterScreenConflicts() {
-        Long[] ids = transactionTemplate.execute(status -> {
+        FixtureIds fixture = transactionTemplate.execute(status -> {
             Region region = new Region("충돌-" + UUID.randomUUID().toString().substring(0, 8), (short) 0);
             entityManager.persist(region);
             Cinema cinema = new Cinema(region, "롤백 테스트", (short) 0);
@@ -41,25 +41,27 @@ class SeatDataSeederTransactionTest {
             entityManager.persist(second);
             entityManager.persist(new Seat(second, "A10", 5, 10));
             entityManager.flush();
-            return new Long[]{region.getId(), cinema.getId(), first.getId(), second.getId()};
+            return new FixtureIds(region.getId(), cinema.getId(), first.getId(), second.getId());
         });
         try {
             assertThatThrownBy(() -> seeder.run(new DefaultApplicationArguments()))
                     .isInstanceOf(IllegalStateException.class).hasMessageContaining("A10");
-            assertThat(seatRepository.findByScreenId(ids[2])).isEmpty();
-            assertThat(seatRepository.findByScreenId(ids[3])).hasSize(1);
+            assertThat(seatRepository.findByScreenId(fixture.firstScreenId())).isEmpty();
+            assertThat(seatRepository.findByScreenId(fixture.secondScreenId())).hasSize(1);
         } finally {
-            deleteFixture(ids);
+            deleteFixture(fixture);
         }
     }
 
-    private void deleteFixture(Long[] ids) {
+    private void deleteFixture(FixtureIds fixture) {
         transactionTemplate.executeWithoutResult(status -> {
-            jdbcTemplate.update("delete from seat where screen_id in (?, ?)", ids[2], ids[3]);
-            jdbcTemplate.update("delete from screen where id in (?, ?)", ids[2], ids[3]);
-            jdbcTemplate.update("delete from cinema where id = ?", ids[1]);
-            jdbcTemplate.update("delete from region where id = ?", ids[0]);
+            jdbcTemplate.update("delete from seat where screen_id in (?, ?)", fixture.firstScreenId(), fixture.secondScreenId());
+            jdbcTemplate.update("delete from screen where id in (?, ?)", fixture.firstScreenId(), fixture.secondScreenId());
+            jdbcTemplate.update("delete from cinema where id = ?", fixture.cinemaId());
+            jdbcTemplate.update("delete from region where id = ?", fixture.regionId());
         });
     }
 
+    private record FixtureIds(Long regionId, Long cinemaId, Long firstScreenId, Long secondScreenId) {
+    }
 }

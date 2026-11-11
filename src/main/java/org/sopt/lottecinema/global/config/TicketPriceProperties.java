@@ -6,7 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-/** 모든 회차에 적용할 원 단위 단가. 누락 또는 잘못된 설정은 애플리케이션 시작 시 검증한다. */
+/**
+ * application.yml의 ticket.prices 하위 값을 같은 이름의 필드로 읽는다. 단위는 원이다.
+ * 애플리케이션의 @EnableConfigurationProperties가 이 설정을 빈으로 등록해 서비스에 주입한다.
+ * @Validated는 누락 또는 잘못된 금액을 애플리케이션 시작 시 검증한다.
+ */
 @Validated
 @ConfigurationProperties(prefix = "ticket.prices")
 public record TicketPriceProperties(

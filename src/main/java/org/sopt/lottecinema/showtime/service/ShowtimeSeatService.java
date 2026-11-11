@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
+// Lombok이 final 필드를 받는 생성자를 만들고, Spring이 해당 빈들을 생성자에 주입한다.
 @RequiredArgsConstructor
 public class ShowtimeSeatService {
 
@@ -38,7 +39,8 @@ public class ShowtimeSeatService {
     /** 회차와 좌석을 동일 스냅샷에서 읽고, 공통 단가 설정을 함께 응답한다. */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ShowtimeSeatResponse getShowtimeSeats(Long showtimeId) {
-        Showtime showtime = showtimeRepository.findWithDetailsById(showtimeId) // 해당 상영 회차 정보(영화, 상영관, 영화관 연관 엔티티 포함)를 가져옴
+        // 응답에 필요한 영화·상영관·영화관을 회차와 함께 조회한다.
+        Showtime showtime = showtimeRepository.findWithDetailsById(showtimeId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "해당 상영 회차를 찾을 수 없습니다."));
         Screen screen = showtime.getScreen();
         Movie movie = showtime.getMovie();
@@ -46,9 +48,8 @@ public class ShowtimeSeatService {
         List<SeatStatus> statuses = seatRepository.findStatuses(screen.getId(), showtimeId);
         validateLayout(screen.getId(), statuses);
         List<SeatInfo> seats = statuses.stream()
-                .map(seat ->
-                        new SeatInfo(seat.seatCode(), seat.rowIndex(), seat.columnIndex(),
-                        seat.reserved()))
+                .map(seat -> new SeatInfo(
+                        seat.seatCode(), seat.rowIndex(), seat.columnIndex(), seat.reserved()))
                 .toList();
 
         // 같은 좌석 목록에서 집계하므로 동시 예매가 발생해도 목록과 잔여석 수가 서로 어긋나지 않는다.

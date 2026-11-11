@@ -29,11 +29,13 @@ public class SeatDataSeeder implements ApplicationRunner {
 
     private final ScreenRepository screenRepository;
     private final SeatRepository seatRepository;
+
     /** JPA 스키마 생성 후 실행되며, 배치 검증 또는 저장 실패 시 전체 초기화를 롤백한다. */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void run(ApplicationArguments args) throws IOException {
         List<SeatPosition> layout = readLayout();
+        // 좌석 번호를 키로 사용해 기존 좌석의 배치 정보를 찾는다. 예를 들어 B3은 (1, 3)에 해당한다.
         Map<String, SeatPosition> positions = layout.stream()
                 .collect(Collectors.toMap(SeatPosition::seatCode, Function.identity()));
 
@@ -70,7 +72,8 @@ public class SeatDataSeeder implements ApplicationRunner {
         List<Seat> newSeats = layout.stream().filter(position -> !existingCodes.contains(position.seatCode()))
                 .map(position -> new Seat(screen, position.seatCode(), position.rowIndex(), position.columnIndex()))
                 .toList();
-        // 기존 행의 좌표 갱신을 먼저 반영하고 누락 좌석을 추가한다. 두 작업은 같은 트랜잭션이다.
+        // flush는 변경 SQL을 DB로 보낸다. 커밋은 run의 트랜잭션이 정상 종료될 때 이루어진다.
+        // 뒤쪽 상영관에서 실패하면 여기서 보낸 변경 SQL도 함께 롤백된다.
         seatRepository.flush();
         seatRepository.saveAllAndFlush(newSeats);
         log.info("좌석 시딩 완료. screenId={}, total={}, added={}", screenId, layout.size(), newSeats.size());
@@ -78,7 +81,8 @@ public class SeatDataSeeder implements ApplicationRunner {
 
     private List<SeatPosition> readLayout() throws IOException {
         ClassPathResource resource = new ClassPathResource("seed/seats-12x15.csv");
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
             // CSV에는 실제 좌석만 기록한다. 빈 칸과 마지막 빈 행은 화면의 12×15 그리드가 표현한다.
             return reader.lines().skip(1).map(line -> {
                 String[] fields = line.split(",");
