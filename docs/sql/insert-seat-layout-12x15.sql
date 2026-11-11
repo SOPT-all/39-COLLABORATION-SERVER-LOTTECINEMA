@@ -90,4 +90,3 @@ SELECT seat_code, row_index, column_index
 FROM seat
 WHERE screen_id = @screen_id
 ORDER BY row_index, column_index;
-
