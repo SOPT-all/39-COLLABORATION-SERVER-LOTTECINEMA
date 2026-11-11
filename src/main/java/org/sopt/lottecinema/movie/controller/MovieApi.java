@@ -1,4 +1,4 @@
-package org.sopt.lottecinema.showtime.controller;
+package org.sopt.lottecinema.movie.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -10,14 +10,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Positive;
 import org.sopt.lottecinema.global.common.SuccessResponse;
-import org.sopt.lottecinema.showtime.dto.MovieCinemaResponse;
+import org.sopt.lottecinema.movie.dto.MovieCinemaResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RequestMapping("/api/v1/movies")
 @Tag(name = "Movie", description = "영화별 지역 및 영화관 조회 API")
-public interface ShowtimeAPI {
+interface MovieApi {
 
     @Operation(
             summary = "영화별 지역 및 영화관 조회",

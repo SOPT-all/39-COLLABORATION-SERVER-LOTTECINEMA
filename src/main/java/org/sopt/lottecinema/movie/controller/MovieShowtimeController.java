@@ -1,16 +1,16 @@
-package org.sopt.lottecinema.showtime.controller;
+package org.sopt.lottecinema.movie.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.sopt.lottecinema.global.common.SuccessResponse;
-import org.sopt.lottecinema.showtime.dto.MovieCinemaResponse;
-import org.sopt.lottecinema.showtime.service.ShowtimeService;
+import org.sopt.lottecinema.movie.dto.MovieCinemaResponse;
+import org.sopt.lottecinema.movie.service.MovieShowtimeService;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class ShowtimeController implements ShowtimeAPI{
-    private final ShowtimeService showtimeService;
+public class MovieShowtimeController implements MovieApi{
+    private final MovieShowtimeService showtimeService;
 
     @Override
     public SuccessResponse<MovieCinemaResponse> getCinemaByMovieId(
