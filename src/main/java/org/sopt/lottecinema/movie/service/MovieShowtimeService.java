@@ -1,12 +1,12 @@
-package org.sopt.lottecinema.showtime.service;
+package org.sopt.lottecinema.movie.service;
 
 import lombok.RequiredArgsConstructor;
 import org.sopt.lottecinema.global.exception.BusinessException;
 import org.sopt.lottecinema.global.exception.ErrorCode;
 import org.sopt.lottecinema.movie.repository.MovieRepository;
-import org.sopt.lottecinema.showtime.dto.MovieCinemaResponse;
-import org.sopt.lottecinema.showtime.repository.ShowtimeRepository.MovieCinemaRow;
-import org.sopt.lottecinema.showtime.repository.ShowtimeRepository;
+import org.sopt.lottecinema.movie.dto.MovieCinemaResponse;
+import org.sopt.lottecinema.movie.repository.MovieShowtimeRepository.MovieCinemaRow;
+import org.sopt.lottecinema.movie.repository.MovieShowtimeRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.LinkedHashMap;
@@ -16,8 +16,8 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ShowtimeService {
-    private final ShowtimeRepository showtimeRepository;
+public class MovieShowtimeService {
+    private final MovieShowtimeRepository showtimeRepository;
     private final MovieRepository movieRepository;
 
     private static class RegionBuilder{

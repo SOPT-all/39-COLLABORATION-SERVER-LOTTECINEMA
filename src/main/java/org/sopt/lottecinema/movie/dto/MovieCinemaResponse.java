@@ -1,4 +1,4 @@
-package org.sopt.lottecinema.showtime.dto;
+package org.sopt.lottecinema.movie.dto;
 
 import java.util.List;
 
