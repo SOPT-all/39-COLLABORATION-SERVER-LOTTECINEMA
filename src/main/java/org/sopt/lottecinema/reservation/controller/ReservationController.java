@@ -6,6 +6,7 @@ import org.sopt.lottecinema.reservation.dto.CreateReservationRequest;
 import org.sopt.lottecinema.reservation.dto.ReservationResponse;
 import org.sopt.lottecinema.reservation.dto.ReservationResult;
 import org.sopt.lottecinema.reservation.service.ReservationService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,8 +32,9 @@ public class ReservationController implements ReservationApi {
     ) {
         ReservationResult result = reservationService.createReservation(showtimeId, request);
         if (result.created()) {
-            return ResponseEntity.status(201).body(SuccessResponse.created(result.response()));
+            return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.created(result.response()));
         }
+        // 같은 요청 ID와 내용으로 재시도한 경우, 기존 예매를 반환하므로 200으로 응답한다.
         return ResponseEntity.ok(SuccessResponse.success(result.response()));
     }
 }
