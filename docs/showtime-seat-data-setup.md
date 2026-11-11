@@ -2,6 +2,21 @@
 
 `GET /api/showtimes/{showtimeId}/seats`는 실제 좌석 좌표와 회차별 단가를 사용한다. 자료가 누락된 경우 회차 또는 상영관 ID를 로그에 남기고 공통 500 응답을 반환한다.
 
+## 시작 시 좌석 자동 등록
+
+`seed` 프로필을 활성화하면 `SeatDataSeeder`가 JPA 초기화 후 실행되어 `seed/seats-12x15.csv`의 77석을 등록한다. 먼저 대상 `screen`과 참조하는 영화관·지역 데이터가 있어야 한다. `SEAT_SEED_SCREEN_ID`는 회차 ID가 아닌 상영관 ID다. 아래 `3`은 실행 예시이며 실제 DB의 상영관 ID로 바꾼다.
+
+```powershell
+$env:SEAT_SEED_SCREEN_ID = "3"
+./gradlew.bat bootRun --args='--spring.profiles.active=seed'
+```
+
+IntelliJ에서는 실행 설정의 Active profiles에 `seed`, 환경변수에 `SEAT_SEED_SCREEN_ID=3`을 지정한다. 다른 프로필과 함께 사용할 경우 `local,seed`처럼 활성화한다. 기존 DB 계정 환경변수도 해당 실행에 설정한다.
+
+동일 설정으로 다시 시작하면 기존 좌석 ID와 장애인석 표시를 유지하고, 누락 좌석과 빈 좌표를 채운다. 다른 좌석 번호나 충돌하는 좌표가 존재하면 전체 작업을 롤백하고 시작을 중단한다. 같은 상영관을 동시에 초기화하는 요청은 상영관 행 잠금으로 순서를 보장한다. 실제 요금은 아래 절차에 따라 회차별로 등록한다.
+
+좌석이 없는 칸은 CSV에 포함하지 않는다. 화면에서는 12×15 그리드를 만들고 좌표에 좌석을 배치한다.
+
 ## 기존 좌석 배치 채우기
 
 1. 배포 전 기존 DB를 백업하고 테스트 DB에서 적용을 확인한다. 기존 `seat`에 아래 nullable 컬럼을 먼저 추가한다. 신규 DB는 엔티티 매핑으로 생성할 수 있다.

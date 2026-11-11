@@ -63,4 +63,15 @@ public class Seat {
         this.columnIndex = columnIndex;
         this.accessible = accessible;
     }
+
+    /** 기존 좌석 ID와 접근성 정보를 유지하면서 미등록 좌표를 채운다. */
+    public void initializePosition(int rowIndex, int columnIndex) {
+        if (rowIndex < 0 || columnIndex < 0
+                || (this.rowIndex != null && this.rowIndex != rowIndex)
+                || (this.columnIndex != null && this.columnIndex != columnIndex)) {
+            throw new IllegalArgumentException("기존 좌석 배치와 시드 배치가 일치하지 않습니다.");
+        }
+        this.rowIndex = rowIndex;
+        this.columnIndex = columnIndex;
+    }
 }
