@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Positive;
 import org.sopt.lottecinema.global.common.SuccessResponse;
 import org.sopt.lottecinema.showtime.dto.MovieCinemaResponse;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -139,6 +140,8 @@ public interface ShowtimeAPI {
                     required = true,
                     example = "1"
             )
-            @PathVariable Long movieId
+            @PathVariable
+            @Positive(message = "영화 ID는 1 이상이어야 합니다.")
+            Long movieId
     );
 }
