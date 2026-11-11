@@ -1,4 +1,4 @@
-package org.sopt.lottecinema.showtime.repository;
+package org.sopt.lottecinema.movie.repository;
 
 import org.sopt.lottecinema.showtime.entity.Showtime;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
+public interface MovieShowtimeRepository extends JpaRepository<Showtime, Long> {
 
     @Query("""
     select distinct
