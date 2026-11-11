@@ -181,7 +181,10 @@ public class ReservationService {
 
     /** DB의 대소문자 비교 설정과 무관하게 조회된 좌석 코드가 요청값과 정확히 같은지 검사한다. */
     private void validateSelectedSeats(List<Seat> seats, List<String> requestedCodes) {
-        List<String> foundCodes = seats.stream().map(Seat::getSeatCode).toList();
+        List<String> foundCodes = seats.stream()
+                .map(Seat::getSeatCode)
+                .toList();
+
         boolean sameSeatCount = seats.size() == requestedCodes.size();
         // MySQL이 b1로 B1을 조회하더라도, Java 문자열 비교로 잘못된 대소문자를 거부한다.
         boolean allCodesMatch = foundCodes.containsAll(requestedCodes);
