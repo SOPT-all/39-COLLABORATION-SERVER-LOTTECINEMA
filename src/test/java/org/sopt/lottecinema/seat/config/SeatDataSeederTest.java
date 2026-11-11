@@ -20,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 /** 같은 MySQL DB에서 초기화와 재시작, 기존 좌석 백필을 검증한다. 테스트 데이터는 롤백한다. */
 @SpringBootTest
@@ -32,6 +35,7 @@ class SeatDataSeederTest {
     @Autowired private ApplicationContext applicationContext;
 
     private Screen screen;
+    private Screen otherScreen;
     private SeatDataSeeder seeder;
 
     @BeforeEach
@@ -42,8 +46,10 @@ class SeatDataSeederTest {
         entityManager.persist(cinema);
         screen = new Screen(cinema, "1관", SeatType.STANDARD);
         entityManager.persist(screen);
+        otherScreen = new Screen(cinema, "2관", SeatType.STANDARD);
+        entityManager.persist(otherScreen);
         entityManager.flush();
-        seeder = new SeatDataSeeder(screenRepository, seatRepository, screen.getId());
+        seeder = new SeatDataSeeder(screenRepository, seatRepository);
     }
 
     @Test
@@ -52,6 +58,11 @@ class SeatDataSeederTest {
         List<Seat> first = seatRepository.findByScreenId(screen.getId());
         List<Long> firstIds = first.stream().map(Seat::getId).toList();
         assertThat(first).hasSize(77);
+        List<Seat> second = seatRepository.findByScreenId(otherScreen.getId());
+        List<Long> secondIds = second.stream().map(Seat::getId).toList();
+        assertThat(second).hasSize(77);
+        assertThat(first).extracting(Seat::getSeatCode)
+                .containsExactlyInAnyOrderElementsOf(second.stream().map(Seat::getSeatCode).toList());
         assertThat(first).filteredOn(seat -> seat.getRowIndex() == 0).extracting(Seat::getSeatCode)
                 .containsExactlyInAnyOrder("A10", "A11");
         assertThat(first).filteredOn(seat -> seat.getSeatCode().equals("E12"))
@@ -66,6 +77,8 @@ class SeatDataSeederTest {
         seeder.run(new DefaultApplicationArguments());
         assertThat(seatRepository.findByScreenId(screen.getId())).extracting(Seat::getId)
                 .containsExactlyInAnyOrderElementsOf(firstIds);
+        assertThat(seatRepository.findByScreenId(otherScreen.getId())).extracting(Seat::getId)
+                .containsExactlyInAnyOrderElementsOf(secondIds);
     }
 
     @Test
@@ -96,14 +109,16 @@ class SeatDataSeederTest {
     }
 
     @Test
-    void rejectsMissingTargetScreen() {
-        SeatDataSeeder missingScreenSeeder = new SeatDataSeeder(screenRepository, seatRepository, Long.MAX_VALUE);
-        assertThatThrownBy(() -> missingScreenSeeder.run(new DefaultApplicationArguments()))
-                .isInstanceOf(IllegalStateException.class).hasMessageContaining("상영관이 없습니다");
+    void enablesStartupSeederWithoutProfile() {
+        assertThat(applicationContext.getBeansOfType(SeatDataSeeder.class)).hasSize(1);
     }
 
     @Test
-    void enablesStartupSeederOnlyForSeedProfile() {
-        assertThat(applicationContext.getBeansOfType(SeatDataSeeder.class)).isEmpty();
+    void handlesNoScreens() throws Exception {
+        ScreenRepository emptyScreens = mock(ScreenRepository.class);
+        SeatRepository unusedSeats = mock(SeatRepository.class);
+        when(emptyScreens.findAllByOrderByIdAsc()).thenReturn(List.of());
+        new SeatDataSeeder(emptyScreens, unusedSeats).run(new DefaultApplicationArguments());
+        verifyNoInteractions(unusedSeats);
     }
 }

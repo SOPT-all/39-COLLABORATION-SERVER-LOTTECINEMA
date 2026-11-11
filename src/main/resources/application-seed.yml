@@ -1,4 +1,0 @@
-# seed 프로필을 활성화한 실행에서만 대상 상영관 좌석을 초기화한다.
-seat:
-  seed:
-    screen-id: ${SEAT_SEED_SCREEN_ID}

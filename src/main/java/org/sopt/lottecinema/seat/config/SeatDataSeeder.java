@@ -9,49 +9,47 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.sopt.lottecinema.screen.entity.Screen;
 import org.sopt.lottecinema.screen.repository.ScreenRepository;
 import org.sopt.lottecinema.seat.entity.Seat;
 import org.sopt.lottecinema.seat.repository.SeatRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** seed 프로필로 시작할 때 지정한 상영관에 사용자 제공 배치 77석을 등록한다. */
+/** 서버 시작 시 모든 상영관에 공통 좌석 배치를 등록한다. */
 @Slf4j
 @Component
-@Profile("seed")
+@RequiredArgsConstructor
 public class SeatDataSeeder implements ApplicationRunner {
 
     private final ScreenRepository screenRepository;
     private final SeatRepository seatRepository;
-    private final Long screenId;
-
-    public SeatDataSeeder(ScreenRepository screenRepository, SeatRepository seatRepository,
-                          @Value("${seat.seed.screen-id}") Long screenId) {
-        this.screenRepository = screenRepository;
-        this.seatRepository = seatRepository;
-        this.screenId = screenId;
-    }
-
     /** JPA 스키마 생성 후 실행되며, 배치 검증 또는 저장 실패 시 전체 초기화를 롤백한다. */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void run(ApplicationArguments args) throws IOException {
-        if (screenId == null || screenId < 1) {
-            throw new IllegalArgumentException("SEAT_SEED_SCREEN_ID에 실제 상영관 ID를 지정해 주세요.");
-        }
         List<SeatPosition> layout = readLayout();
-        Screen screen = screenRepository.findByIdForUpdate(screenId)
-                .orElseThrow(() -> new IllegalStateException("시딩할 상영관이 없습니다. screenId=" + screenId));
-        List<Seat> existingSeats = seatRepository.findByScreenId(screenId);
         Map<String, SeatPosition> positions = layout.stream()
                 .collect(Collectors.toMap(SeatPosition::seatCode, Function.identity()));
+
+        // 모든 상영관을 조회해 각 상영관에 공통 배치를 적용한다.
+        List<Screen> screens = screenRepository.findAllByOrderByIdAsc();
+        if (screens.isEmpty()) {
+            log.info("좌석을 시딩할 상영관이 없습니다.");
+        }
+        for (Screen screen : screens) {
+            seedScreen(screen, layout, positions);
+        }
+    }
+
+    private void seedScreen(Screen screen, List<SeatPosition> layout, Map<String, SeatPosition> positions) {
+        Long screenId = screen.getId();
+        List<Seat> existingSeats = seatRepository.findByScreenId(screenId);
 
         // 모든 기존 좌석을 먼저 확인한다. 다른 배치가 섞여 있으면 변경 전에 시작을 중단한다.
         for (Seat seat : existingSeats) {
@@ -75,7 +73,7 @@ public class SeatDataSeeder implements ApplicationRunner {
         // 기존 행의 좌표 갱신을 먼저 반영하고 누락 좌석을 추가한다. 두 작업은 같은 트랜잭션이다.
         seatRepository.flush();
         seatRepository.saveAllAndFlush(newSeats);
-        log.info("좌석 시딩 완료. screenId={}, total=77, added={}", screenId, newSeats.size());
+        log.info("좌석 시딩 완료. screenId={}, total={}, added={}", screenId, layout.size(), newSeats.size());
     }
 
     private List<SeatPosition> readLayout() throws IOException {

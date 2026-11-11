@@ -55,7 +55,7 @@ class ShowtimeControllerTest {
                 2, 3, List.of(new SeatInfo("E1", 0, 0, false), new SeatInfo("E3", 0, 2, true),
                 new SeatInfo("E4", 0, 3, false)), new TicketPrices(15000, 12000, 10000, 10000)));
 
-        mvc.perform(get("/api/showtimes/1203/seats").accept(MediaType.APPLICATION_JSON))
+        mvc.perform(get("/api/v1/showtimes/1203/seats").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(200))
                 .andExpect(jsonPath("$.message").value("OK"))
@@ -73,7 +73,7 @@ class ShowtimeControllerTest {
     @ParameterizedTest
     @ValueSource(strings = {"abc", "9223372036854775808"})
     void rejectsInvalidLongPath(String id) throws Exception {
-        mvc.perform(get("/api/showtimes/{id}/seats", id)).andExpect(status().isBadRequest())
+        mvc.perform(get("/api/v1/showtimes/{id}/seats", id)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_PARAMETER_TYPE"));
         verifyNoInteractions(service);
     }
@@ -81,7 +81,7 @@ class ShowtimeControllerTest {
     @ParameterizedTest
     @ValueSource(longs = {0, -1})
     void rejectsNonPositivePathWithFieldDetails(long id) throws Exception {
-        mvc.perform(get("/api/showtimes/{id}/seats", id)).andExpect(status().isBadRequest())
+        mvc.perform(get("/api/v1/showtimes/{id}/seats", id)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
                 .andExpect(jsonPath("$.errors[0].field").value("showtimeId"));
         verifyNoInteractions(service);
@@ -90,20 +90,20 @@ class ShowtimeControllerTest {
     @Test
     void returnsNotFoundForUnknownShowtime() throws Exception {
         when(service.getShowtimeSeats(1203L)).thenThrow(new BusinessException(ErrorCode.NOT_FOUND));
-        mvc.perform(get("/api/showtimes/1203/seats")).andExpect(status().isNotFound())
+        mvc.perform(get("/api/v1/showtimes/1203/seats")).andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("NOT_FOUND"));
     }
 
     @Test
     void returnsServerErrorForMissingData() throws Exception {
         when(service.getShowtimeSeats(1203L)).thenThrow(new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR));
-        mvc.perform(get("/api/showtimes/1203/seats")).andExpect(status().isInternalServerError())
+        mvc.perform(get("/api/v1/showtimes/1203/seats")).andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"));
     }
 
     @Test
     void returnsEmptyNotAcceptableForXml() throws Exception {
-        mvc.perform(get("/api/showtimes/1203/seats").accept(MediaType.APPLICATION_XML))
+        mvc.perform(get("/api/v1/showtimes/1203/seats").accept(MediaType.APPLICATION_XML))
                 .andExpect(status().isNotAcceptable()).andExpect(content().string(""));
         verifyNoInteractions(service);
     }
