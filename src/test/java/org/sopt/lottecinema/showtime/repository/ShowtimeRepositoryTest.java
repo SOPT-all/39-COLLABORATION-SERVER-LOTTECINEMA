@@ -10,6 +10,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.sopt.lottecinema.cinema.entity.Cinema;
+import org.sopt.lottecinema.global.config.TicketPriceProperties;
 import org.sopt.lottecinema.movie.entity.Movie;
 import org.sopt.lottecinema.region.entity.Region;
 import org.sopt.lottecinema.reservation.entity.Reservation;
@@ -22,7 +23,8 @@ import org.sopt.lottecinema.seat.repository.SeatStatus;
 import org.sopt.lottecinema.showtime.entity.FormatType;
 import org.sopt.lottecinema.showtime.entity.LanguageType;
 import org.sopt.lottecinema.showtime.entity.Showtime;
-import org.sopt.lottecinema.showtime.entity.ShowtimeTicketPrice;
+import org.sopt.lottecinema.showtime.dto.TicketPrices;
+import org.sopt.lottecinema.showtime.service.ShowtimeSeatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,11 +38,12 @@ class ShowtimeRepositoryTest {
 
     @Autowired private EntityManager entityManager;
     @Autowired private ShowtimeRepository showtimeRepository;
-    @Autowired private ShowtimeTicketPriceRepository priceRepository;
     @Autowired private SeatRepository seatRepository;
+    @Autowired private ShowtimeSeatService showtimeSeatService;
+    @Autowired private TicketPriceProperties ticketPriceProperties;
 
     @Test
-    void findsOrderedSeatsWithReservationsOnlyForRequestedShowtimeInThreeQueries() {
+    void findsOrderedSeatsWithReservationsOnlyForRequestedShowtimeInTwoQueries() {
         Region region = new Region("좌석조회-" + UUID.randomUUID().toString().substring(0, 8), (short) 0);
         entityManager.persist(region);
         Cinema cinema = new Cinema(region, "테스트 극장", (short) 0);
@@ -66,7 +69,6 @@ class ShowtimeRepositoryTest {
         entityManager.persist(new Seat(otherScreen, "B1", 0, 0));
         reserve(first, a1);
         reserve(second, a3);
-        entityManager.persist(new ShowtimeTicketPrice(first, 15000, 12000, 10000, 10000));
         entityManager.flush();
         entityManager.clear();
 
@@ -74,15 +76,23 @@ class ShowtimeRepositoryTest {
         statistics.clear();
         Showtime loaded = showtimeRepository.findWithDetailsById(first.getId()).orElseThrow();
         List<SeatStatus> seats = seatRepository.findStatuses(screen.getId(), first.getId());
-        ShowtimeTicketPrice price = priceRepository.findByShowtimeId(first.getId()).orElseThrow();
 
         assertThat(loaded.getMovie().getTitle()).isEqualTo("테스트 영화");
         assertThat(loaded.getScreen().getCinema().getName()).isEqualTo("테스트 극장");
         assertThat(seats).extracting("seatCode").containsExactly("A1", "A3");
         assertThat(seats).extracting("reserved").containsExactly(true, false);
         assertThat(seats).extracting("columnIndex").containsExactly(0, 2);
-        assertThat(price.getAdultPrice()).isEqualTo(15000);
-        assertThat(statistics.getPrepareStatementCount()).isEqualTo(3);
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(2);
+
+        // 요금 행이 없는 두 회차 모두 같은 설정 단가를 사용하며, 회차당 두 번만 DB를 조회한다.
+        entityManager.clear();
+        statistics.clear();
+        TicketPrices expectedPrices = new TicketPrices(ticketPriceProperties.adult(), ticketPriceProperties.teen(),
+                ticketPriceProperties.senior(), ticketPriceProperties.disabled());
+        assertThat(showtimeSeatService.getShowtimeSeats(first.getId()).ticketPrices()).isEqualTo(expectedPrices);
+        entityManager.clear();
+        assertThat(showtimeSeatService.getShowtimeSeats(second.getId()).ticketPrices()).isEqualTo(expectedPrices);
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(4);
     }
 
     private void reserve(Showtime showtime, Seat seat) {

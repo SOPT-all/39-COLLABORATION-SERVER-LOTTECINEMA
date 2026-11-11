@@ -25,7 +25,7 @@ public interface ShowtimeApi {
             @ApiResponse(responseCode = "404", description = "NOT_FOUND. 해당 회차가 없습니다.",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "406", description = "지원하지 않는 응답 형식. 본문이 없습니다.", content = @Content),
-            @ApiResponse(responseCode = "500", description = "INTERNAL_SERVER_ERROR. 좌표·단가 누락 또는 서버 오류입니다.",
+            @ApiResponse(responseCode = "500", description = "INTERNAL_SERVER_ERROR. 좌표 누락 또는 서버 오류입니다.",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     SuccessResponse<ShowtimeSeatResponse> getShowtimeSeats(

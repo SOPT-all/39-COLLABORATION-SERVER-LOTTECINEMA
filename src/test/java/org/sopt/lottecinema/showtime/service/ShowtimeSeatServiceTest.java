@@ -12,10 +12,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.sopt.lottecinema.cinema.entity.Cinema;
+import org.sopt.lottecinema.global.config.TicketPriceProperties;
 import org.sopt.lottecinema.global.exception.BusinessException;
 import org.sopt.lottecinema.global.exception.ErrorCode;
 import org.sopt.lottecinema.movie.entity.Movie;
@@ -42,14 +42,15 @@ class ShowtimeSeatServiceTest {
 
     @Mock private ShowtimeRepository showtimeRepository;
     @Mock private SeatRepository seatRepository;
-    @Mock private ShowtimeTicketPriceReader ticketPriceReader;
-    @InjectMocks private ShowtimeSeatService service;
+    private ShowtimeSeatService service;
 
     private Screen screen;
     private Movie movie;
 
     @BeforeEach
     void setUp() {
+        service = new ShowtimeSeatService(showtimeRepository, seatRepository,
+                new TicketPriceProperties(15000, 12000, 10000, 10000));
         Region region = new Region("서울", (short) 0);
         Cinema cinema = new Cinema(region, "용산", (short) 0);
         screen = new Screen(cinema, "4관", SeatType.RECLINER);
@@ -67,7 +68,6 @@ class ShowtimeSeatServiceTest {
                 new SeatStatus("E3", 0, 2, true),
                 new SeatStatus("E4", 0, 3, false)));
         TicketPrices prices = new TicketPrices(15000, 12000, 10000, 10000);
-        when(ticketPriceReader.getTicketPrices(1203L)).thenReturn(prices);
 
         ShowtimeSeatResponse response = service.getShowtimeSeats(1203L);
 
@@ -88,7 +88,6 @@ class ShowtimeSeatServiceTest {
     void returnsSoldOutSeats() {
         prepareShowtime(FormatType.TWO_D);
         when(seatRepository.findStatuses(3L, 1203L)).thenReturn(List.of(new SeatStatus("A1", 0, 0, true)));
-        when(ticketPriceReader.getTicketPrices(1203L)).thenReturn(new TicketPrices(0, 0, 0, 0));
         assertThat(service.getShowtimeSeats(1203L).availableSeatCount()).isZero();
     }
 
@@ -96,7 +95,6 @@ class ShowtimeSeatServiceTest {
     void returnsZeroCountsForScreenWithoutSeats() {
         prepareShowtime(FormatType.TWO_D);
         when(seatRepository.findStatuses(3L, 1203L)).thenReturn(List.of());
-        when(ticketPriceReader.getTicketPrices(1203L)).thenReturn(new TicketPrices(0, 0, 0, 0));
         ShowtimeSeatResponse response = service.getShowtimeSeats(1203L);
         assertThat(response.availableSeatCount()).isZero();
         assertThat(response.totalSeatCount()).isZero();
@@ -109,7 +107,7 @@ class ShowtimeSeatServiceTest {
         assertThatThrownBy(() -> service.getShowtimeSeats(1203L))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.NOT_FOUND));
-        verifyNoInteractions(seatRepository, ticketPriceReader);
+        verifyNoInteractions(seatRepository);
     }
 
     @ParameterizedTest
@@ -120,7 +118,6 @@ class ShowtimeSeatServiceTest {
         assertThatThrownBy(() -> service.getShowtimeSeats(1203L))
                 .isInstanceOfSatisfying(BusinessException.class,
                         exception -> assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.INTERNAL_SERVER_ERROR));
-        verifyNoInteractions(ticketPriceReader);
     }
 
     static Stream<SeatStatus> invalidSeats() {

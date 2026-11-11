@@ -13,6 +13,14 @@ spring:
         format_sql: true
         show_sql: true
 
+# 모든 회차에 동일하게 적용하는 관람 유형별 1인 단가 (원)
+ticket:
+  prices:
+    adult: 15000
+    teen: 12000
+    senior: 10000
+    disabled: 10000
+
 # AWS S3
 cloud:
   aws:

@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.sopt.lottecinema.global.config.TicketPriceProperties;
 import org.sopt.lottecinema.global.exception.BusinessException;
 import org.sopt.lottecinema.global.exception.ErrorCode;
 import org.sopt.lottecinema.movie.entity.Movie;
@@ -32,9 +33,9 @@ public class ShowtimeSeatService {
 
     private final ShowtimeRepository showtimeRepository;
     private final SeatRepository seatRepository;
-    private final ShowtimeTicketPriceReader ticketPriceReader;
+    private final TicketPriceProperties ticketPriceProperties;
 
-    /** 회차·좌석·단가를 동일 스냅샷에서 읽고 영속성 컨텍스트가 열려 있을 때 응답으로 변환한다. */
+    /** 회차와 좌석을 동일 스냅샷에서 읽고, 공통 단가 설정을 함께 응답한다. */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ShowtimeSeatResponse getShowtimeSeats(Long showtimeId) {
         Showtime showtime = showtimeRepository.findWithDetailsById(showtimeId)
@@ -50,7 +51,9 @@ public class ShowtimeSeatService {
 
         // 같은 좌석 목록에서 집계하므로 동시 예매가 발생해도 목록과 잔여석 수가 서로 어긋나지 않는다.
         int availableSeatCount = (int) statuses.stream().filter(seat -> !seat.reserved()).count();
-        TicketPrices prices = ticketPriceReader.getTicketPrices(showtimeId);
+        // 단가는 모든 회차가 공유한다. 예매에서도 같은 설정으로 총액을 계산한다.
+        TicketPrices prices = new TicketPrices(ticketPriceProperties.adult(), ticketPriceProperties.teen(),
+                ticketPriceProperties.senior(), ticketPriceProperties.disabled());
         return new ShowtimeSeatResponse(
                 showtime.getStartAt().atOffset(KST_OFFSET).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 showtime.getEndAt().atOffset(KST_OFFSET).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
