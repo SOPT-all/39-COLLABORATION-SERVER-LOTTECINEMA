@@ -57,6 +57,9 @@ public class Movie {
     @Column(name = "curation_type", length = 20)
     private CurationType curationType;
 
+    @Column(name = "curation_order")
+    private Short curationOrder;
+
     @Column(name = "popularity_rank")
     private Short popularityRank;
 
@@ -74,6 +77,7 @@ public class Movie {
             String ageRating,
             LocalDate releaseDate,
             CurationType curationType,
+            Short curationOrder,
             Short popularityRank,
             BigDecimal bookingRate,
             BigDecimal movieRating
@@ -85,6 +89,7 @@ public class Movie {
         this.ageRating = ageRating;
         this.releaseDate = releaseDate;
         this.curationType = curationType;
+        this.curationOrder = curationOrder;
         this.popularityRank = popularityRank;
         this.bookingRate = bookingRate;
         this.movieRating = movieRating;

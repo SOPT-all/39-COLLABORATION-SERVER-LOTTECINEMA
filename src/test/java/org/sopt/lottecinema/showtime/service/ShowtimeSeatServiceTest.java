@@ -56,7 +56,7 @@ class ShowtimeSeatServiceTest {
         screen = new Screen(cinema, "4관", SeatType.RECLINER);
         ReflectionTestUtils.setField(screen, "id", 3L);
         movie = new Movie("테스트 영화", null, "애니메이션", (short) 109, "ALL",
-                LocalDate.of(2026, 11, 1), null, null, BigDecimal.ONE, BigDecimal.ONE);
+                LocalDate.of(2026, 11, 1), null, null, null, BigDecimal.ONE, BigDecimal.ONE);
     }
 
     @ParameterizedTest
