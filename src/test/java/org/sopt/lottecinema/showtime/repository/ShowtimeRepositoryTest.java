@@ -95,6 +95,34 @@ class ShowtimeRepositoryTest {
         assertThat(statistics.getPrepareStatementCount()).isEqualTo(4);
     }
 
+    @Test
+    void checksOverlapAndAllowsAdjacentTimesAndOtherScreens() {
+        Region region = new Region("충돌검사-" + UUID.randomUUID().toString().substring(0, 8), (short) 0);
+        entityManager.persist(region);
+        Cinema cinema = new Cinema(region, "테스트 극장", (short) 0);
+        entityManager.persist(cinema);
+        Screen screen = new Screen(cinema, "1관", SeatType.STANDARD);
+        Screen otherScreen = new Screen(cinema, "2관", SeatType.STANDARD);
+        entityManager.persist(screen);
+        entityManager.persist(otherScreen);
+        Movie movie = new Movie("테스트 영화", null, "드라마", (short) 120, "ALL",
+                LocalDate.of(2026, 11, 1), null, null, null, BigDecimal.ONE, BigDecimal.ONE);
+        entityManager.persist(movie);
+        LocalDateTime start = LocalDateTime.of(2026, 11, 20, 14, 0);
+        LocalDateTime end = start.plusHours(2);
+        entityManager.persist(new Showtime(movie, screen, start, end, FormatType.TWO_D, LanguageType.NONE));
+        entityManager.flush();
+
+        assertThat(showtimeRepository.existsByScreenIdAndStartAtLessThanAndEndAtGreaterThan(
+                screen.getId(), end.plusHours(1), start.plusMinutes(90))).isTrue();
+        assertThat(showtimeRepository.existsByScreenIdAndStartAtLessThanAndEndAtGreaterThan(
+                screen.getId(), end.plusHours(1), end)).isFalse();
+        assertThat(showtimeRepository.existsByScreenIdAndStartAtLessThanAndEndAtGreaterThan(
+                screen.getId(), start, start.minusHours(1))).isFalse();
+        assertThat(showtimeRepository.existsByScreenIdAndStartAtLessThanAndEndAtGreaterThan(
+                otherScreen.getId(), end, start)).isFalse();
+    }
+
     private void reserve(Showtime showtime, Seat seat) {
         Reservation reservation = new Reservation(UUID.randomUUID(), showtime, (byte) 1, (byte) 0, (byte) 0,
                 (byte) 0, 15000, LocalDateTime.of(2026, 11, 1, 12, 0));
