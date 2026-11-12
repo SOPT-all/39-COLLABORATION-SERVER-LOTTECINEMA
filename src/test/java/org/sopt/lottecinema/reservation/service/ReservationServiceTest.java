@@ -18,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.sopt.lottecinema.cinema.entity.Cinema;
 import org.sopt.lottecinema.global.exception.BusinessException;
 import org.sopt.lottecinema.global.exception.ErrorCode;
@@ -57,7 +59,7 @@ class ReservationServiceTest {
     @Autowired private ShowtimeSeatService showtimeSeatService;
     private Fixture fixture;
 
-    /** 회차 세 개와 좌석을 준비한다. 세 번째 회차는 고정 시계와 시작 시각이 같아 마감 상태다. */
+    /** 회차 세 개와 좌석을 준비한다. 세 번째 회차의 시작은 고정 시계의 현재 시각과 같다. */
     @BeforeEach
     void setUp() {
         fixture = transaction.execute(status -> {
@@ -76,18 +78,18 @@ class ReservationServiceTest {
                     LocalDateTime.of(2026, 11, 12, 16, 5), FormatType.TWO_D, LanguageType.NONE);
             Showtime second = new Showtime(movie, screen, first.getStartAt().plusHours(3), first.getEndAt().plusHours(3),
                     FormatType.TWO_D, LanguageType.NONE);
-            Showtime closed = new Showtime(movie, screen, LocalDateTime.of(2026, 11, 12, 10, 0),
+            Showtime startingNow = new Showtime(movie, screen, LocalDateTime.of(2026, 11, 12, 10, 0),
                     LocalDateTime.of(2026, 11, 12, 11, 40), FormatType.TWO_D, LanguageType.NONE);
             entityManager.persist(first);
             entityManager.persist(second);
-            entityManager.persist(closed);
+            entityManager.persist(startingNow);
             for (int column = 0; column < 8; column++) {
                 entityManager.persist(new Seat(screen, "A" + (column + 1), 0, column));
             }
             entityManager.persist(new Seat(other, "B1", 0, 0));
             entityManager.flush();
             return new Fixture(region.getId(), cinema.getId(), movie.getId(), screen.getId(), other.getId(),
-                    first.getId(), second.getId(), closed.getId());
+                    first.getId(), second.getId(), startingNow.getId());
         });
     }
 
@@ -96,11 +98,11 @@ class ReservationServiceTest {
     void tearDown() {
         transaction.executeWithoutResult(status -> {
             jdbc.update("delete from reservation_seat where showtime_id in (?, ?, ?)",
-                    fixture.showtimeId(), fixture.secondShowtimeId(), fixture.closedShowtimeId());
+                    fixture.showtimeId(), fixture.secondShowtimeId(), fixture.startingNowShowtimeId());
             jdbc.update("delete from reservation where showtime_id in (?, ?, ?)",
-                    fixture.showtimeId(), fixture.secondShowtimeId(), fixture.closedShowtimeId());
+                    fixture.showtimeId(), fixture.secondShowtimeId(), fixture.startingNowShowtimeId());
             jdbc.update("delete from showtime where id in (?, ?, ?)",
-                    fixture.showtimeId(), fixture.secondShowtimeId(), fixture.closedShowtimeId());
+                    fixture.showtimeId(), fixture.secondShowtimeId(), fixture.startingNowShowtimeId());
             jdbc.update("delete from seat where screen_id in (?, ?)", fixture.screenId(), fixture.otherScreenId());
             jdbc.update("delete from screen where id in (?, ?)", fixture.screenId(), fixture.otherScreenId());
             jdbc.update("delete from cinema where id = ?", fixture.cinemaId());
@@ -109,7 +111,7 @@ class ReservationServiceTest {
         });
     }
 
-    /** 좌석 순서가 다른 재시도와 마감 이후 재시도가 저장된 최초 응답으로 돌아오는지 확인한다. */
+    /** 좌석 순서나 회차의 상영 시각이 바뀌어도 동일 요청의 최초 저장 결과를 반환하는지 확인한다. */
     @Test
     void createsAndReplaysStoredReservationAfterShowtimeStarts() {
         UUID requestId = UUID.randomUUID();
@@ -167,11 +169,10 @@ class ReservationServiceTest {
         assertThat(service.createReservation(fixture.showtimeId(), request).response().totalAmount()).isEqualTo(94000);
     }
 
-    /** 없는 회차, 마감 정각, 소속이 다른 좌석, 대소문자 불일치와 금액 불일치를 검사한다. */
+    /** 없는 회차, 소속이 다른 좌석, 대소문자 불일치와 금액 불일치를 검사한다. */
     @Test
     void rejectsInvalidShowtimeSeatsAndAmount() {
         assertError(ErrorCode.NOT_FOUND, Long.MAX_VALUE, request(UUID.randomUUID(), List.of("A1")));
-        assertError(ErrorCode.SHOWTIME_NOT_BOOKABLE, fixture.closedShowtimeId(), request(UUID.randomUUID(), List.of("A1")));
         assertError(ErrorCode.VALIDATION_FAILED, fixture.showtimeId(), request(UUID.randomUUID(), List.of("B1")));
         assertError(ErrorCode.VALIDATION_FAILED, fixture.showtimeId(), request(UUID.randomUUID(), List.of("a1")));
         CreateReservationRequest valid = request(UUID.randomUUID(), List.of("A1"));
@@ -180,15 +181,25 @@ class ReservationServiceTest {
         assertThat(countReservations()).isZero();
     }
 
-    /** 시작 정각과 이후는 마감하고, 시작 1초 전에는 예매를 허용하는지 확인한다. */
-    @Test
-    void appliesShowtimeStartCutoff() {
-        assertError(ErrorCode.SHOWTIME_NOT_BOOKABLE, fixture.closedShowtimeId(), request(UUID.randomUUID(), List.of("A1")));
-        jdbc.update("update showtime set start_at = '2026-11-12 09:59:59' where id = ?", fixture.closedShowtimeId());
-        assertError(ErrorCode.SHOWTIME_NOT_BOOKABLE, fixture.closedShowtimeId(), request(UUID.randomUUID(), List.of("A1")));
-        jdbc.update("update showtime set start_at = '2026-11-12 10:00:01' where id = ?", fixture.closedShowtimeId());
-        assertThat(service.createReservation(fixture.closedShowtimeId(), request(UUID.randomUUID(), List.of("A1"))).created())
-                .isTrue();
+    /** 상영 전·시작 정각·진행 중·종료 후 모두 확정하고, 생성 시각에는 실제 시계를 사용하는지 확인한다. */
+    @ParameterizedTest(name = "{0}")
+    @CsvSource({
+            "상영 전, 2026-11-12T10:00:01, 2026-11-12T11:40:01",
+            "시작 정각, 2026-11-12T10:00:00, 2026-11-12T11:40:00",
+            "상영 중, 2026-11-12T09:59:59, 2026-11-12T11:39:59",
+            "종료 후, 2026-10-27T14:25:00, 2026-10-27T16:14:00"
+    })
+    void reservesRegardlessOfShowtimeTime(String caseName, LocalDateTime startAt, LocalDateTime endAt) {
+        jdbc.update("update showtime set start_at = ?, end_at = ? where id = ?",
+                startAt, endAt, fixture.startingNowShowtimeId());
+
+        ReservationResult result = service.createReservation(
+                fixture.startingNowShowtimeId(), request(UUID.randomUUID(), List.of("A1")));
+
+        assertThat(result.created()).isTrue();
+        assertThat(result.response().createdAt()).isEqualTo("2026-11-12T10:00:00+09:00");
+        assertThat(countReservations()).isEqualTo(1);
+        assertThat(showtimeSeatService.getShowtimeSeats(fixture.startingNowShowtimeId()).availableSeatCount()).isEqualTo(7);
     }
 
     /** 좌석 중복, 0명·9명, 인원과 좌석 수 불일치는 DB 저장 전에 검증한다. */
@@ -282,11 +293,11 @@ class ReservationServiceTest {
     /** 테스트 회차에 커밋된 예매 행 수를 읽어 실패·재시도에서 중복 행이 없는지 확인한다. */
     private int countReservations() {
         return jdbc.queryForObject("select count(*) from reservation where showtime_id in (?, ?, ?)", Integer.class,
-                fixture.showtimeId(), fixture.secondShowtimeId(), fixture.closedShowtimeId());
+                fixture.showtimeId(), fixture.secondShowtimeId(), fixture.startingNowShowtimeId());
     }
 
     private record Fixture(Long regionId, Long cinemaId, Long movieId, Long screenId, Long otherScreenId,
-                           Long showtimeId, Long secondShowtimeId, Long closedShowtimeId) {
+                           Long showtimeId, Long secondShowtimeId, Long startingNowShowtimeId) {
     }
 
     private record Attempt(ReservationResult result, ErrorCode error) {
@@ -294,7 +305,7 @@ class ReservationServiceTest {
 
     @TestConfiguration
     static class FixedClockConfiguration {
-        /** 마감 경계와 응답 시각을 반복 가능하게 검증할 고정 KST 시계를 제공한다. */
+        /** 상영 시각과 독립된 생성 시각을 반복 가능하게 검증할 고정 KST 시계를 제공한다. */
         @Bean
         @Primary
         Clock reservationClock() {

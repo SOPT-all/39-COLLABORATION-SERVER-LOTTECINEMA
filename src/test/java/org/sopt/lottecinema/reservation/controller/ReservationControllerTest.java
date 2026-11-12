@@ -133,10 +133,10 @@ class ReservationControllerTest {
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors[0].field").value("seatCodes"));
     }
 
-    /** 네 도메인 충돌 코드가 각각 HTTP 409로 매핑되는지 확인한다. */
+    /** 좌석·금액·요청 ID의 충돌 코드가 각각 HTTP 409로 매핑되는지 확인한다. */
     @ParameterizedTest
     @EnumSource(value = ErrorCode.class, names = {"SEAT_ALREADY_RESERVED", "RESERVATION_AMOUNT_CHANGED",
-            "RESERVATION_REQUEST_CONFLICT", "SHOWTIME_NOT_BOOKABLE"})
+            "RESERVATION_REQUEST_CONFLICT"})
     void returnsConflictCode(ErrorCode errorCode) throws Exception {
         when(service.createReservation(eq(1203L), any())).thenThrow(new BusinessException(errorCode));
         mvc.perform(post("/api/v1/showtimes/1203/reservations").contentType(MediaType.APPLICATION_JSON).content(BODY))
