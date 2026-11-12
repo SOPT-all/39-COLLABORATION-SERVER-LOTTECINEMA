@@ -32,10 +32,10 @@ public class ShowtimeService {
         LocalDate targetDate = date != null ? date : LocalDate.now(clock);
 
         // 해당 날짜의 시작 시각부터 다음 날 시작 직전까지 조회함
-        LocalDateTime startAt = targetDate.atStartOfDay();
-        LocalDateTime endAt = targetDate.plusDays(1).atStartOfDay();
+        LocalDateTime dateStartAt = targetDate.atStartOfDay();
+        LocalDateTime dateEndAt = targetDate.plusDays(1).atStartOfDay();
 
-        List<ShowtimeRepository.ShowtimeRow> rows = showtimeRepository.findShowtimesByMovieAndCinemaAndDate(movieId, cinemaId, startAt, endAt);
+        List<ShowtimeRepository.ShowtimeRow> rows = showtimeRepository.findShowtimesByMovieAndCinemaAndDate(movieId, cinemaId, dateStartAt, dateEndAt);
 
         // 상영 회차가 없을 때 영화/영화관 존재 여부를 확인함
         if (rows.isEmpty()) {
