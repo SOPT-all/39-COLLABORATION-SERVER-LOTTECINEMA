@@ -53,7 +53,7 @@ class ShowtimeRepositoryTest {
         entityManager.persist(screen);
         entityManager.persist(otherScreen);
         Movie movie = new Movie("테스트 영화", null, "애니메이션", (short) 100, "ALL",
-                LocalDate.of(2026, 11, 1), null, null, BigDecimal.ONE, BigDecimal.ONE);
+                LocalDate.of(2026, 11, 1), null, null, null, BigDecimal.ONE, BigDecimal.ONE);
         entityManager.persist(movie);
         Showtime first = new Showtime(movie, screen, LocalDateTime.of(2026, 11, 12, 10, 0),
                 LocalDateTime.of(2026, 11, 12, 12, 0), FormatType.TWO_D, LanguageType.NONE);
