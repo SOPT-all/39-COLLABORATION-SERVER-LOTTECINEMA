@@ -6,6 +6,9 @@ import java.util.List;
 public record ShowtimeListResponse(
         List<ShowtimeResponse> showtimes
 ) {
+    public ShowtimeListResponse {
+        showtimes = List.copyOf(showtimes);
+    }
     public record ShowtimeResponse(
             Long showtimeId,
             OffsetDateTime startAt,
@@ -17,8 +20,5 @@ public record ShowtimeListResponse(
             Integer reservedSeatCount,
             Integer availableSeatCount
     ) {
-    }
-    public ShowtimeListResponse{
-        showtimes = List.copyOf(showtimes);
     }
 }
