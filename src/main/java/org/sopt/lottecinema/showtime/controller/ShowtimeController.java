@@ -9,7 +9,6 @@ import org.sopt.lottecinema.showtime.service.ShowtimeService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDate;
 
 @RestController
