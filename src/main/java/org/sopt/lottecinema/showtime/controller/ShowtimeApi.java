@@ -23,9 +23,16 @@ import java.time.LocalDate;
 @Tag(name = "Showtime", description = "상영 회차 API")
 public interface ShowtimeApi {
 
-    @Operation(summary = "상영 회차 좌석 조회", description = "영화·극장 정보, 좌석 배치와 회차별 예매 상태, 잔여석 및 유형별 단가를 조회합니다.")
+    @Operation(summary = "상영 회차 좌석 조회", description = """
+            영화·극장 정보, 좌석 배치와 회차별 예매 상태, 잔여석 및 유형별 단가를 조회합니다.
+            고정 더미데이터 시연을 위해 과거·상영 중·종료 회차도 조회할 수 있으며, 조회만으로 좌석을 선점하지 않습니다.
+            상영 정보 확인창(V2-03)과 좌석 선택 화면(V3-01)은 같은 showtimeId의 응답을 사용합니다.
+            isReserved=false는 선택 가능(T), true는 예매 확정되어 선택 불가(F)인 좌석입니다.
+            통로에는 좌석 객체가 없으며, 시연 화면은 빈 공간을 포함한 12행×15열 배치를 유지합니다.
+            ticketPrices는 유형별 1인 단가이며, 프론트는 이 값으로 할인 전 상품금액을 계산합니다.
+            """)
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "좌석 현황 조회 성공. 매진과 마감 회차도 조회할 수 있습니다."),
+            @ApiResponse(responseCode = "200", description = "좌석 현황 조회 성공. 과거·상영 중·종료·매진 회차도 조회할 수 있습니다."),
             @ApiResponse(responseCode = "400", description = "INVALID_PARAMETER_TYPE 또는 VALIDATION_FAILED",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "NOT_FOUND. 해당 회차가 없습니다.",

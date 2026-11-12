@@ -36,7 +36,10 @@ public class ShowtimeSeatService {
     private final SeatRepository seatRepository;
     private final TicketPriceProperties ticketPriceProperties;
 
-    /** 회차와 좌석을 동일 스냅샷에서 읽고, 공통 단가 설정을 함께 응답한다. */
+    /**
+     * 상영 정보 미리보기와 좌석 선택에 사용할 회차·좌석·공통 단가를 같은 스냅샷에서 읽는다.
+     * 고정 더미데이터 시연을 위해 상영 시각과 무관하게 조회하며, 좌석을 선점하거나 예매를 생성하지 않는다.
+     */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ShowtimeSeatResponse getShowtimeSeats(Long showtimeId) {
         // 응답에 필요한 영화·상영관·영화관을 회차와 함께 조회한다.

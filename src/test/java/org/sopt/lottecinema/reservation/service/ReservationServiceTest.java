@@ -1,8 +1,12 @@
 package org.sopt.lottecinema.reservation.service;
 
 import jakarta.persistence.EntityManager;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -34,6 +38,8 @@ import org.sopt.lottecinema.seat.entity.Seat;
 import org.sopt.lottecinema.showtime.entity.FormatType;
 import org.sopt.lottecinema.showtime.entity.LanguageType;
 import org.sopt.lottecinema.showtime.entity.Showtime;
+import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse;
+import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse.SeatInfo;
 import org.sopt.lottecinema.showtime.service.ShowtimeSeatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,11 +47,13 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 /** 실제 MySQL의 커밋·롤백과 동시 요청을 검증한다. 서비스의 독립 트랜잭션이 읽을 수 있게 준비 데이터를 커밋한다. */
 @SpringBootTest
@@ -125,6 +133,69 @@ class ReservationServiceTest {
         assertThat(replayed.created()).isFalse();
         assertThat(replayed.response()).isEqualTo(created.response());
         assertThat(countReservations()).isEqualTo(1);
+    }
+
+    /** 과거 시연 회차의 77석 조회 → 두 좌석 확정 → 재시도에서 실제 좌석 상태와 잔여석이 일치하는지 검증한다. */
+    @Test
+    void reservesDemoSeatsAndReplaysWithoutReducingAvailabilityAgain() throws IOException {
+        prepareDemoLayout();
+        ShowtimeSeatResponse preview = showtimeSeatService.getShowtimeSeats(fixture.showtimeId());
+        assertThat(preview.startAt()).isEqualTo("2026-10-27T14:25:00+09:00");
+        assertThat(preview.endAt()).isEqualTo("2026-10-27T16:14:00+09:00");
+        assertThat(preview.totalSeatCount()).isEqualTo(77);
+        assertThat(preview.availableSeatCount()).isEqualTo(77);
+        assertThat(preview.seats()).allSatisfy(seat -> assertThat(seat.reserved()).isFalse());
+        assertThat(preview.seats()).filteredOn(seat -> List.of("E4", "E5").contains(seat.seatCode()))
+                .extracting(SeatInfo::seatCode, SeatInfo::rowIndex, SeatInfo::columnIndex)
+                .containsExactly(tuple("E4", 4, 4), tuple("E5", 4, 5));
+        // 같은 데이터를 미리보기와 좌석표에서 다시 읽어도 조회만으로 예매가 생기지 않는다.
+        assertThat(showtimeSeatService.getShowtimeSeats(fixture.showtimeId())).isEqualTo(preview);
+        assertThat(countReservations()).isZero();
+
+        UUID requestId = UUID.randomUUID();
+        CreateReservationRequest request = request(requestId, List.of("E4", "E5"));
+        ReservationResult created = service.createReservation(fixture.showtimeId(), request);
+        assertThat(created.created()).isTrue();
+        assertThat(created.response().seatCodes()).containsExactly("E4", "E5");
+        assertThat(created.response().totalAmount()).isEqualTo(preview.ticketPrices().adult() * 2);
+
+        ShowtimeSeatResponse confirmed = showtimeSeatService.getShowtimeSeats(fixture.showtimeId());
+        assertThat(confirmed.totalSeatCount()).isEqualTo(77);
+        assertThat(confirmed.availableSeatCount()).isEqualTo(75);
+        assertThat(confirmed.seats()).filteredOn(SeatInfo::reserved).extracting(SeatInfo::seatCode)
+                .containsExactly("E4", "E5");
+
+        ReservationResult replayed = service.createReservation(
+                fixture.showtimeId(), request(requestId, List.of("E5", "E4")));
+        assertThat(replayed.created()).isFalse();
+        assertThat(replayed.response()).isEqualTo(created.response());
+        assertThat(showtimeSeatService.getShowtimeSeats(fixture.showtimeId())).isEqualTo(confirmed);
+
+        assertError(ErrorCode.RESERVATION_REQUEST_CONFLICT, fixture.showtimeId(), request(requestId, List.of("E6", "E7")));
+        assertError(ErrorCode.SEAT_ALREADY_RESERVED, fixture.showtimeId(), request(UUID.randomUUID(), List.of("E4", "E5")));
+        assertThat(countReservations()).isEqualTo(1);
+        assertThat(showtimeSeatService.getShowtimeSeats(fixture.showtimeId())).isEqualTo(confirmed);
+        // 같은 물리 좌석이어도 다른 회차의 확정 상태에는 영향을 주지 않는다.
+        assertThat(showtimeSeatService.getShowtimeSeats(fixture.secondShowtimeId()).availableSeatCount()).isEqualTo(77);
+    }
+
+    /** 기본 테스트 좌석을 시더와 같은 77석 배치로 바꾸고 원본 시연 회차의 날짜·시각을 적용한다. */
+    private void prepareDemoLayout() throws IOException {
+        ClassPathResource layout = new ClassPathResource("seed/seats-12x15.csv");
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(layout.getInputStream(), StandardCharsets.UTF_8))) {
+            List<String> positions = reader.lines().skip(1).toList();
+            transaction.executeWithoutResult(status -> {
+                jdbc.update("delete from seat where screen_id = ?", fixture.screenId());
+                for (String position : positions) {
+                    String[] fields = position.split(",");
+                    jdbc.update("insert into seat (screen_id, seat_code, row_index, column_index) values (?, ?, ?, ?)",
+                            fixture.screenId(), fields[0], Integer.parseInt(fields[1]), Integer.parseInt(fields[2]));
+                }
+                jdbc.update("update showtime set start_at = ?, end_at = ? where id = ?",
+                        LocalDateTime.of(2026, 10, 27, 14, 25), LocalDateTime.of(2026, 10, 27, 16, 14), fixture.showtimeId());
+            });
+        }
     }
 
     /** 뒤쪽 좌석에서 충돌하면 앞서 삽입된 좌석과 예매 행도 남지 않는지 확인한다. */
