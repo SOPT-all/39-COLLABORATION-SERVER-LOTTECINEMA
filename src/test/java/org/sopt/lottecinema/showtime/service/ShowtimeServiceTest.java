@@ -19,6 +19,7 @@ import org.sopt.lottecinema.cinema.repository.CinemaRepository;
 import org.sopt.lottecinema.global.exception.BusinessException;
 import org.sopt.lottecinema.global.exception.ErrorCode;
 import org.sopt.lottecinema.movie.repository.MovieRepository;
+import org.sopt.lottecinema.screen.entity.SeatType;
 import org.sopt.lottecinema.showtime.dto.ShowtimeListResponse;
 import org.sopt.lottecinema.showtime.dto.ShowtimeListResponse.ShowtimeResponse;
 import org.sopt.lottecinema.showtime.repository.ShowtimeRepository;
@@ -84,6 +85,7 @@ class ShowtimeServiceTest {
 
         assertThat(r.showtimeId()).isEqualTo(10L);
         assertThat(r.screenName()).isEqualTo("1관");
+        assertThat(r.seatType()).isEqualTo(SeatType.RECLINER);
         assertThat(r.formatType()).isEqualTo("2D");
         assertThat(r.languageType()).isEqualTo("SUBTITLED");
         assertThat(r.totalSeatCount()).isEqualTo(100);
@@ -174,7 +176,6 @@ class ShowtimeServiceTest {
         assertThat(response.showtimes()).extracting(ShowtimeResponse::showtimeId).containsExactly(1L, 2L, 3L);
     }
 
-    // ---- helper ----
     private static ShowtimeRow row(Long id, String startAt, String endAt, Long total, Long reserved) {
         return new StubRow(id, LocalDateTime.parse(startAt), LocalDateTime.parse(endAt), total, reserved);
     }
@@ -185,6 +186,7 @@ class ShowtimeServiceTest {
         @Override public LocalDateTime getStartAt() { return start; }
         @Override public LocalDateTime getEndAt() { return end; }
         @Override public String getScreenName() { return "1관"; }
+        @Override public SeatType getSeatType() { return SeatType.RECLINER; }
         @Override public String getFormatType() { return "2D"; }
         @Override public String getLanguageType() { return "SUBTITLED"; }
         @Override public Long getTotalSeatCount() { return total; }

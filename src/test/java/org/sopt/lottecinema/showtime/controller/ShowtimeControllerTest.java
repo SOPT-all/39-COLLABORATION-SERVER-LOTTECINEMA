@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.sopt.lottecinema.global.exception.BusinessException;
 import org.sopt.lottecinema.global.exception.ErrorCode;
 import org.sopt.lottecinema.global.exception.GlobalExceptionHandler;
+import org.sopt.lottecinema.screen.entity.SeatType;
 import org.sopt.lottecinema.showtime.dto.ShowtimeListResponse;
 import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse;
 import org.sopt.lottecinema.showtime.dto.ShowtimeSeatResponse.CinemaInfo;
@@ -128,7 +129,7 @@ class ShowtimeControllerTest {
                 10L,
                 OffsetDateTime.of(2026, 11, 27, 10, 0, 0, 0, ZoneOffset.ofHours(9)),
                 OffsetDateTime.of(2026, 11, 27, 12, 0, 0, 0, ZoneOffset.ofHours(9)),
-                "1관", "2D", "SUBTITLED", 100, 20, 80);
+                "1관", SeatType.RECLINER, "2D", "SUBTITLED", 100, 20, 80);
         when(showtimeService.getShowtimeLists(1L, 2L, LocalDate.of(2026, 11, 27)))
                 .thenReturn(new ShowtimeListResponse(List.of(item)));
 
@@ -141,6 +142,7 @@ class ShowtimeControllerTest {
                 .andExpect(jsonPath("$.data.showtimes[0].startAt").exists())
                 .andExpect(jsonPath("$.data.showtimes[0].endAt").exists())
                 .andExpect(jsonPath("$.data.showtimes[0].screenName").value("1관"))
+                .andExpect(jsonPath("$.data.showtimes[0].seatType").value("RECLINER"))
                 .andExpect(jsonPath("$.data.showtimes[0].formatType").value("2D"))
                 .andExpect(jsonPath("$.data.showtimes[0].languageType").value("SUBTITLED"))
                 .andExpect(jsonPath("$.data.showtimes[0].totalSeatCount").value(100))
