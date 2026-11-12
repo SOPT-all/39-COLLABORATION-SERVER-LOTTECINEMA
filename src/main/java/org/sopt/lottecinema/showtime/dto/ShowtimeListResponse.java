@@ -1,5 +1,7 @@
 package org.sopt.lottecinema.showtime.dto;
 
+import org.sopt.lottecinema.screen.entity.SeatType;
+
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -14,6 +16,7 @@ public record ShowtimeListResponse(
             OffsetDateTime startAt,
             OffsetDateTime endAt,
             String screenName,
+            SeatType seatType,
             String formatType,
             String languageType,
             Integer totalSeatCount,

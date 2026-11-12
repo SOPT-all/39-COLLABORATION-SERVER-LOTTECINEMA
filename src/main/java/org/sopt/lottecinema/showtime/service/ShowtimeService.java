@@ -61,6 +61,7 @@ public class ShowtimeService {
                 row.getStartAt().atOffset(KST_OFFSET),
                 row.getEndAt().atOffset(KST_OFFSET),
                 row.getScreenName(),
+                row.getSeatType(),
                 row.getFormatType(),
                 row.getLanguageType(),
                 totalSeatCount,

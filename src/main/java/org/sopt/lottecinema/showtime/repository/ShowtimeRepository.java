@@ -3,6 +3,8 @@ package org.sopt.lottecinema.showtime.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.sopt.lottecinema.screen.entity.SeatType;
 import org.sopt.lottecinema.showtime.entity.Showtime;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -26,6 +28,7 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
             st.start_at AS startAt,
             st.end_at AS endAt,
             sc.name AS screenName,
+            sc.seat_type AS seatType,
             st.format_type AS formatType,
             st.language_type AS languageType,
             (
@@ -58,6 +61,7 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
         LocalDateTime getStartAt();
         LocalDateTime getEndAt();
         String getScreenName();
+        SeatType getSeatType();
         String getFormatType();
         String getLanguageType();
         Long getTotalSeatCount();
