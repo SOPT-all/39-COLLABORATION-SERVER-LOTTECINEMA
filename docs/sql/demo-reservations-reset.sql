@@ -17,7 +17,7 @@ WHERE DATABASE() = @demo_database
   AND st.id IN (1, 2, 3, 4, 5, 6, 7, 8, 9)
   AND m.id = 1 AND m.title = '극장판 치이카와: 인어 섬의 비밀'
   AND c.id = 16 AND c.name = '용산'
-  AND s.name IN ('1관', '4관')
+  AND s.name IN ('1관', '4관', '5관')
   AND st.start_at >= '2026-10-27 00:00:00'
   AND st.start_at < '2026-10-28 00:00:00';
 SET @deleted_seat_count = ROW_COUNT();
@@ -33,7 +33,7 @@ WHERE DATABASE() = @demo_database
   AND st.id IN (1, 2, 3, 4, 5, 6, 7, 8, 9)
   AND m.id = 1 AND m.title = '극장판 치이카와: 인어 섬의 비밀'
   AND c.id = 16 AND c.name = '용산'
-  AND s.name IN ('1관', '4관')
+  AND s.name IN ('1관', '4관', '5관')
   AND st.start_at >= '2026-10-27 00:00:00'
   AND st.start_at < '2026-10-28 00:00:00';
 SET @deleted_reservation_count = ROW_COUNT();
@@ -58,7 +58,7 @@ WHERE DATABASE() = @demo_database
   AND st.id IN (1, 2, 3, 4, 5, 6, 7, 8, 9)
   AND m.id = 1 AND m.title = '극장판 치이카와: 인어 섬의 비밀'
   AND c.id = 16 AND c.name = '용산'
-  AND s.name IN ('1관', '4관')
+  AND s.name IN ('1관', '4관', '5관')
   AND st.start_at >= '2026-10-27 00:00:00'
   AND st.start_at < '2026-10-28 00:00:00'
 ORDER BY st.start_at, st.id;

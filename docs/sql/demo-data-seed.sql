@@ -39,10 +39,11 @@ INSERT INTO cinema (id, region_id, name, display_order) VALUES
     (20, 1, '합정', 20),
     (21, 1, '홍대입구', 21);
 
--- 3. 상영관: '3_상영관' A6:C7. screenId=1은 용산 1관, screenId=2는 용산 4관.
+-- 3. 상영관: screenId=1은 용산 1관, 2는 용산 4관, 3은 추가 확인된 용산 5관.
 INSERT INTO screen (id, cinema_id, name, seat_type) VALUES
     (1, 16, '1관', 'RECLINER'),
-    (2, 16, '4관', 'RECLINER');
+    (2, 16, '4관', 'RECLINER'),
+    (3, 16, '5관', 'RECLINER');
 
 -- 4. 영화: '4_영화(인기순위)' A7:K17. 대표 영화 movieId=1.
 INSERT INTO movie (id, title, poster_url, genre, runtime_minutes, age_rating, release_date, curation_type, popularity_rank, booking_rate, movie_rating) VALUES
@@ -76,13 +77,13 @@ UPDATE movie SET curation_order = 3 WHERE id = 11;
 -- LOTSI_PLAY 2번: movieId=10, Stray Kids World Tour<RUN IT>LIVE VIEWING
 -- LOTSI_PLAY 3번: movieId=11, BTS WORLD TOUR 'ARIRANG' IN SAO PAULO: LIVE VIEWING
 
--- 5. 상영 회차: '5_상영회차' A6:G14. C10만 4관으로 수정. KST 현지 시각 DATETIME.
+-- 5. 상영 회차: '5_상영회차' A6:G14. 13:55 회차는 원본대로 5관이다. KST 현지 시각 DATETIME.
 INSERT INTO showtime (id, movie_id, screen_id, start_at, end_at, format_type, language_type) VALUES
     (1, 1, 1, '2026-10-27 13:25:00', '2026-10-27 15:14:00', '2D', 'DUBBED'),
     (2, 1, 1, '2026-10-27 15:35:00', '2026-10-27 17:24:00', '2D', 'DUBBED'),
     (3, 1, 1, '2026-10-27 17:45:00', '2026-10-27 19:34:00', '2D', 'DUBBED'),
     (4, 1, 1, '2026-10-27 19:55:00', '2026-10-27 21:44:00', '2D', 'DUBBED'),
-    (5, 1, 2, '2026-10-27 13:55:00', '2026-10-27 15:44:00', '2D', 'SUBTITLED'),
+    (5, 1, 3, '2026-10-27 13:55:00', '2026-10-27 15:44:00', '2D', 'SUBTITLED'),
     (6, 1, 2, '2026-10-27 14:25:00', '2026-10-27 16:14:00', '2D', 'SUBTITLED'),
     (7, 1, 2, '2026-10-27 16:35:00', '2026-10-27 18:24:00', '2D', 'SUBTITLED'),
     (8, 1, 2, '2026-10-27 18:45:00', '2026-10-27 20:34:00', '2D', 'SUBTITLED'),
@@ -246,15 +247,21 @@ INSERT INTO seat (screen_id, seat_code, row_index, column_index) VALUES
     (2, 'G12', 6, 13),
     (2, 'G13', 6, 14);
 
+-- 5관에도 같은 공통 배치 77석을 복사한다. 좌석 행은 상영관별로 별도 생성된다.
+INSERT INTO seat (screen_id, seat_code, row_index, column_index)
+SELECT 3, seat_code, row_index, column_index
+FROM seat
+WHERE screen_id = 2;
+
 COMMIT;
 
--- 7. 적재 검증: region=8, cinema=21, screen=2, movie=11, showtime=9, seat=154.
+-- 7. 적재 검증: region=8, cinema=21, screen=3, movie=11, showtime=9, seat=231.
 SELECT 'region' AS table_name, COUNT(*) AS actual_count, 8 AS expected_count FROM region
 UNION ALL SELECT 'cinema', COUNT(*), 21 FROM cinema
-UNION ALL SELECT 'screen', COUNT(*), 2 FROM screen
+UNION ALL SELECT 'screen', COUNT(*), 3 FROM screen
 UNION ALL SELECT 'movie', COUNT(*), 11 FROM movie
 UNION ALL SELECT 'showtime', COUNT(*), 9 FROM showtime
-UNION ALL SELECT 'seat', COUNT(*), 154 FROM seat;
+UNION ALL SELECT 'seat', COUNT(*), 231 FROM seat;
 
 -- 프론트 요청 예: GET /api/v1/showtimes?movieId=1&cinemaId=16&date=2026-10-27
 -- 4관 14:25~16:14 대표 회차는 showtimeId=6.
