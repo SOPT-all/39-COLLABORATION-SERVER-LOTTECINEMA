@@ -31,7 +31,6 @@ public enum ErrorCode {
     SEAT_ALREADY_RESERVED(HttpStatus.CONFLICT, "SEAT_ALREADY_RESERVED", "선택한 좌석 중 이미 예매된 좌석이 있습니다."),
     RESERVATION_AMOUNT_CHANGED(HttpStatus.CONFLICT, "RESERVATION_AMOUNT_CHANGED", "예상 금액과 현재 예매 금액이 다릅니다."),
     RESERVATION_REQUEST_CONFLICT(HttpStatus.CONFLICT, "RESERVATION_REQUEST_CONFLICT", "같은 요청 ID가 다른 예매에 사용되었습니다."),
-    SHOWTIME_NOT_BOOKABLE(HttpStatus.CONFLICT, "SHOWTIME_NOT_BOOKABLE", "예매 가능한 시간이 지났습니다."),
 
     // 500 Internal Server Error
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");

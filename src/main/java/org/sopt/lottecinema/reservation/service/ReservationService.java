@@ -99,7 +99,7 @@ public class ReservationService {
         });
     }
 
-    /** 기존 UUID를 먼저 확인하고, 신규 요청이면 회차·좌석·마감·금액을 검사한 뒤 함께 저장한다. */
+    /** 기존 UUID를 먼저 확인하고, 신규 요청이면 상영 시각과 무관하게 회차·좌석·금액을 검사한 뒤 저장한다. */
     private ReservationResult createInTransaction(Long showtimeId, CreateReservationRequest request) {
         // 1. requestId로 기존 예매가 있는지 확인한다.
         Reservation existing = reservationRepository.findByRequestId(request.requestId()).orElse(null);
@@ -119,20 +119,17 @@ public class ReservationService {
         // 4. 요청한 모든 좌석이 해당 상영관에 존재하고 코드의 대소문자까지 일치하는지 검사한다.
         validateSelectedSeats(seats, request.seatCodes());
 
-        // 5. KST 기준 현재 시각이 상영 시작 시각 이상이면 예매를 거부한다.
-        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), BOOKING_ZONE);
-        if (!now.isBefore(showtime.getStartAt())) {
-            throw new BusinessException(ErrorCode.SHOWTIME_NOT_BOOKABLE);
-        }
-
-        // 6. 공통 유형별 단가로 총액을 계산하고 사용자가 확인한 금액과 비교한다.
+        // 5. 공통 유형별 단가로 총액을 계산하고 사용자가 확인한 금액과 비교한다.
         int totalAmount = calculateTotalAmount(request.ticketCounts());
         if (!BigInteger.valueOf(totalAmount).equals(request.expectedTotalAmount())) {
             throw new BusinessException(ErrorCode.RESERVATION_AMOUNT_CHANGED);
         }
 
-        // 7. 예매와 선택 좌석을 같은 트랜잭션에서 저장한다.
+        // 6. 예매와 선택 좌석을 같은 트랜잭션에서 저장한다.
         TicketCounts counts = request.ticketCounts();
+        // 고정된 과거 회차로도 시연하므로 상영 시각에 따른 마감 검사는 하지 않는다.
+        // 생성 시각은 회차의 날짜와 별개로 실제 현재 KST를 기록한다.
+        LocalDateTime createdAt = LocalDateTime.ofInstant(clock.instant(), BOOKING_ZONE);
         // 검증된 인원(0~8명)을 엔티티의 byte 필드로 옮긴다.
         // DB의 초 단위 저장 정밀도에 맞춰 최초 응답과 재조회 응답의 생성 시각을 동일하게 유지한다.
         Reservation reservation = new Reservation(
@@ -143,7 +140,7 @@ public class ReservationService {
                 counts.senior().byteValueExact(),
                 counts.disabled().byteValueExact(),
                 totalAmount,
-                now.truncatedTo(ChronoUnit.SECONDS)
+                createdAt.truncatedTo(ChronoUnit.SECONDS)
         );
 
         // UUID 중복을 좌석 INSERT보다 먼저 확인한다. 어느 좌석이라도 실패하면 예매 행도 롤백된다.
@@ -154,7 +151,7 @@ public class ReservationService {
                 .toList();
         reservationSeatRepository.saveAllAndFlush(reservationSeats);
 
-        // 8. 저장한 값으로 응답을 만들고 신규 생성 여부를 컨트롤러에 전달한다.
+        // 7. 저장한 값으로 응답을 만들고 신규 생성 여부를 컨트롤러에 전달한다.
         ReservationResponse response = ReservationResponse.from(reservation, request.seatCodes());
         return new ReservationResult(response, true);
     }
