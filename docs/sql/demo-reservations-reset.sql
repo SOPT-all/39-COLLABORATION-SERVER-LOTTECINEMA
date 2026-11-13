@@ -1,15 +1,4 @@
--- 반복 시연 전에 확정 예매만 정리하는 수동 실행 SQL (MySQL 8).
--- 실행 전 API 서버를 중지하고 시연 전용 DB를 선택한다.
--- 아래 DB 이름을 실제 시연 전용 DB 이름과 맞춘 뒤 파일 전체를 실행한다.
--- 선택한 DB가 이 이름과 다르면 DELETE는 실행되어도 대상이 0건이다.
--- 마지막 결과의 reset_status가 SKIPPED_WRONG_DATABASE이면 DB 선택부터 다시 확인한다.
---
--- demo-data-seed.sql이 만든 movieId=1, cinemaId=16, showtimeId=1~9만 정리한다.
--- ID 외에 영화명·영화관명·날짜·상영관명도 확인하여 다른 예매는 남긴다.
--- 지역·영화·영화관·회차·좌석 및 다른 회차의 예매는 삭제하지 않는다.
--- 기존 requestId도 함께 사라지므로 새 시연에서는 새로운 UUID를 만든다.
--- 앱 시작이나 API 요청마다 자동 실행하지 않는다.
--- SQL 도구는 오류 발생 시 중단하도록 설정하고 오류가 나면 ROLLBACK한다.
+-- 반복 시연 전에 확정 예매만 정리(삭제)하는 수동 실행 SQL (MySQL 8).
 
 SET NAMES utf8mb4;
 SET @demo_database = 'lottecinema_demo';
