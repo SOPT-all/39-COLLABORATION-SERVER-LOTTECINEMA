@@ -14,6 +14,7 @@ public record MovieCinemaResponse(
 
     public record CinemaResponse(
             Long cinemaId,
-            String cinemaName
+            String cinemaName,
+            boolean hasShowtimes
     ){}
 }
