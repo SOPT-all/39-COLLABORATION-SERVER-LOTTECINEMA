@@ -2,6 +2,7 @@ package org.sopt.lottecinema.movie.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import org.sopt.lottecinema.movie.entity.CurationType;
 import org.sopt.lottecinema.movie.entity.Movie;
 
@@ -17,9 +18,11 @@ public record MovieListResponse(
         Short curationOrder,
         Short popularityRank,
         BigDecimal bookingRate,
-        BigDecimal movieRating
+        BigDecimal movieRating,
+        Long dDay
 ) {
-    public static MovieListResponse from(Movie movie) {
+    public static MovieListResponse from(Movie movie, LocalDate referenceDate) {
+        boolean upcoming = movie.getReleaseDate().isAfter(referenceDate);
         return new MovieListResponse(
                 movie.getId(),
                 movie.getTitle(),
@@ -32,7 +35,8 @@ public record MovieListResponse(
                 movie.getCurationOrder(),
                 movie.getPopularityRank(),
                 movie.getBookingRate(),
-                movie.getMovieRating()
+                upcoming ? null : movie.getMovieRating(),
+                upcoming ? ChronoUnit.DAYS.between(referenceDate, movie.getReleaseDate()) : null
         );
     }
 }
