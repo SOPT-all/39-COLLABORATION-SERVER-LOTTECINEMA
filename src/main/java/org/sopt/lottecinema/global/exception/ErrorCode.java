@@ -19,6 +19,14 @@ public enum ErrorCode {
     MISSING_PARAMETER(HttpStatus.BAD_REQUEST, "MISSING_PARAMETER", "필수 요청 파라미터가 누락되었습니다."),
     INVALID_PARAMETER_TYPE(HttpStatus.BAD_REQUEST, "INVALID_PARAMETER_TYPE", "요청 파라미터의 형식이 올바르지 않습니다."),
 
+    INVALID_SHOWTIME_RANGE(HttpStatus.BAD_REQUEST, "INVALID_SHOWTIME_RANGE", "종료 시각은 시작 시각보다 늦어야 합니다."),
+
+    // 401 Unauthorized
+    ADMIN_AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "ADMIN_AUTHENTICATION_REQUIRED", "관리자 인증이 필요합니다."),
+
+    // 409 Conflict
+    SHOWTIME_CONFLICT(HttpStatus.CONFLICT, "SHOWTIME_CONFLICT", "같은 상영관에 시간이 겹치는 회차가 있습니다."),
+
     // 404 Not Found
     NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "대상을 찾을 수 없습니다."),
 
