@@ -1,6 +1,7 @@
 package org.sopt.lottecinema.movie.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -24,11 +25,15 @@ class MovieServiceTest {
     @Mock
     private MovieRepository movieRepository;
 
+    @Mock
+    private MovieListDateProvider movieListDateProvider;
+
     private MovieService movieService;
 
     @BeforeEach
     void setUp() {
-        movieService = new MovieService(movieRepository);
+        movieService = new MovieService(movieRepository, movieListDateProvider);
+        when(movieListDateProvider.getReferenceDate()).thenReturn(LocalDate.of(2026, 10, 27));
     }
 
     @Test
@@ -52,12 +57,37 @@ class MovieServiceTest {
         assertThat(response.genre()).isEqualTo("애니메이션");
         assertThat(response.runtimeMinutes()).isEqualTo((short) 100);
         assertThat(response.ageRating()).isEqualTo("전체");
-        assertThat(response.releaseDate()).isEqualTo(LocalDate.of(2026, 11, 1));
+        assertThat(response.releaseDate()).isEqualTo(LocalDate.of(2026, 10, 27));
         assertThat(response.curationType()).isEqualTo(CurationType.LOTSI_PICK);
         assertThat(response.curationOrder()).isEqualTo((short) 1);
         assertThat(response.popularityRank()).isEqualTo((short) 2);
         assertThat(response.bookingRate()).isEqualByComparingTo("25.00");
         assertThat(response.movieRating()).isEqualByComparingTo("8.5");
+        assertThat(response.dDay()).isNull();
+    }
+
+    @Test
+    void usesOneReferenceDateForAllListsAndPreservesStoredRatings() {
+        Movie pick = movie(1L, CurationType.LOTSI_PICK, (short) 1, (short) 1);
+        Movie play = movie(2L, CurationType.LOTSI_PLAY, (short) 1, (short) 2);
+        ReflectionTestUtils.setField(pick, "releaseDate", LocalDate.of(2026, 10, 30));
+        ReflectionTestUtils.setField(play, "releaseDate", LocalDate.of(2026, 10, 28));
+        when(movieListDateProvider.getReferenceDate()).thenReturn(
+                LocalDate.of(2026, 10, 27), LocalDate.of(2026, 10, 28));
+        when(movieRepository.findByPopularityRankIsNotNullOrderByPopularityRankAscIdAsc())
+                .thenReturn(List.of(pick, play));
+        when(movieRepository.findByCurationTypeIsNotNullAndCurationOrderIsNotNullOrderByCurationOrderAscIdAsc())
+                .thenReturn(List.of(pick, play));
+
+        MovieListsResponse result = movieService.findMovies();
+
+        assertThat(result.popularMovies()).extracting(MovieListResponse::dDay).containsExactly(3L, 1L);
+        assertThat(result.popularMovies()).allSatisfy(response -> assertThat(response.movieRating()).isNull());
+        assertThat(result.lotsiPickMovies()).containsExactly(result.popularMovies().get(0));
+        assertThat(result.lotsiPlayMovies()).containsExactly(result.popularMovies().get(1));
+        assertThat(pick.getMovieRating()).isEqualByComparingTo("8.5");
+        assertThat(play.getMovieRating()).isEqualByComparingTo("8.5");
+        verify(movieListDateProvider).getReferenceDate();
     }
 
     @Test
@@ -75,7 +105,7 @@ class MovieServiceTest {
 
     private Movie movie(Long id, CurationType type, Short order, Short rank) {
         Movie movie = new Movie("테스트 영화 " + id, "https://example.com/poster.jpg", "애니메이션", (short) 100,
-                "전체", LocalDate.of(2026, 11, 1), type, order, rank,
+                "전체", LocalDate.of(2026, 10, 27), type, order, rank,
                 new BigDecimal("25.00"), new BigDecimal("8.5"));
         ReflectionTestUtils.setField(movie, "id", id);
         return movie;

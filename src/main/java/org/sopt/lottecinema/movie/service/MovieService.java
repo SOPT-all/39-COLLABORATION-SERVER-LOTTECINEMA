@@ -1,5 +1,6 @@
 package org.sopt.lottecinema.movie.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.sopt.lottecinema.movie.dto.MovieListResponse;
@@ -16,11 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class MovieService {
 
     private final MovieRepository movieRepository;
+    private final MovieListDateProvider movieListDateProvider;
 
     public MovieListsResponse findMovies() {
+        LocalDate referenceDate = movieListDateProvider.getReferenceDate();
         List<MovieListResponse> popularMovies = movieRepository
                 .findByPopularityRankIsNotNullOrderByPopularityRankAscIdAsc().stream()
-                .map(MovieListResponse::from)
+                .map(movie -> MovieListResponse.from(movie, referenceDate))
                 .toList();
 
         List<Movie> curatedMovies = movieRepository
@@ -28,15 +31,15 @@ public class MovieService {
 
         return new MovieListsResponse(
                 popularMovies,
-                findCuratedMovies(curatedMovies, CurationType.LOTSI_PICK),
-                findCuratedMovies(curatedMovies, CurationType.LOTSI_PLAY)
+                findCuratedMovies(curatedMovies, CurationType.LOTSI_PICK, referenceDate),
+                findCuratedMovies(curatedMovies, CurationType.LOTSI_PLAY, referenceDate)
         );
     }
 
-    private List<MovieListResponse> findCuratedMovies(List<Movie> movies, CurationType type) {
+    private List<MovieListResponse> findCuratedMovies(List<Movie> movies, CurationType type, LocalDate referenceDate) {
         return movies.stream()
                 .filter(movie -> movie.getCurationType() == type)
-                .map(MovieListResponse::from)
+                .map(movie -> MovieListResponse.from(movie, referenceDate))
                 .toList();
     }
 }
