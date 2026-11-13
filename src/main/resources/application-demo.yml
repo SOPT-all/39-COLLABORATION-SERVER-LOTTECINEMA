@@ -1,0 +1,4 @@
+# 영화 목록에만 적용하는 시연 기준일
+movie:
+  list:
+    reference-date: ${MOVIE_LIST_REFERENCE_DATE:2026-10-27}

@@ -13,6 +13,11 @@ spring:
         format_sql: true
         show_sql: true
 
+# 영화 목록 기준일: 미설정 시 한국 시간의 현재 날짜 사용 (YYYY-MM-DD)
+movie:
+  list:
+    reference-date: ${MOVIE_LIST_REFERENCE_DATE:}
+
 # 모든 회차에 동일하게 적용하는 관람 유형별 1인 단가 (원)
 ticket:
   prices:
