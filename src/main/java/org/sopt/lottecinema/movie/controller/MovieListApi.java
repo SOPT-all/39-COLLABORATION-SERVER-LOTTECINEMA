@@ -28,8 +28,9 @@ public interface MovieListApi {
                       평점이 등록되지 않았다면 movieRating도 null입니다.
                     - DB의 개봉일과 평점 원본은 변경하지 않습니다.
 
-                    기준일은 기본적으로 Asia/Seoul의 현재 날짜이며, demo 프로필에서는 2026-10-27입니다.
-                    MOVIE_LIST_REFERENCE_DATE 환경변수로 기준일을 지정할 수 있습니다.
+                    기준일은 기본적으로 시연 날짜인 2026-10-27입니다.
+                    MOVIE_LIST_REFERENCE_DATE 환경변수로 다른 기준일을 지정할 수 있으며,
+                    빈 값으로 설정하면 Asia/Seoul의 현재 날짜를 사용합니다.
                     이 설정은 영화 목록에만 적용하며 상영 회차 조회와 예매 마감 판단에는 적용하지 않습니다.
                     아래 응답 예시는 기준일이 2026-10-27인 경우입니다.
                     """
