@@ -22,7 +22,7 @@ interface MovieShowtimeApi {
 
     @Operation(
             summary = "영화별 지역 및 영화관 조회",
-            description = "선택한 영화의 상영 회차 유무와 관계없이 모든 지역과 영화관을 조회합니다. " + "영화관별 hasShowtimes는 날짜와 관계없이 해당 영화의 회차가 하나 이상 등록되어 있으면 true입니다."
+            description = "선택한 영화의 상영 회차 유무와 관계없이 모든 지역과 영화관을 조회하고, MY 영화관 목록을 함께 반환합니다. " + "영화관별 hasShowtimes는 날짜와 관계없이 해당 영화의 회차가 하나 이상 등록되어 있으면 true입니다."
     )
     @ApiResponses({
             @ApiResponse(
@@ -36,6 +36,12 @@ interface MovieShowtimeApi {
                                                         "status": 200,
                                                         "message": "OK",
                                                         "data": {
+                                                            "myCinemas": [
+                                                                {
+                                                                    "cinemaId": 21,
+                                                                    "cinemaName": "홍대입구"
+                                                                }
+                                                            ],
                                                             "regions": [
                                                                 {
                                                                     "regionId": 1,
@@ -194,6 +200,12 @@ interface MovieShowtimeApi {
                                                       "status": 200,
                                                       "message": "OK",
                                                       "data": {
+                                                        "myCinemas": [
+                                                          {
+                                                            "cinemaId": 21,
+                                                            "cinemaName": "홍대입구"
+                                                          }
+                                                        ],
                                                         "regions": []
                                                       }
                                                     }
