@@ -39,7 +39,7 @@ interface MovieShowtimeApi {
                                                             "myCinemas": [
                                                                 {
                                                                     "cinemaId": 21,
-                                                                    "cinemaName": "홍대입구역"
+                                                                    "cinemaName": "홍대입구"
                                                                 }
                                                             ],
                                                             "regions": [
@@ -203,7 +203,7 @@ interface MovieShowtimeApi {
                                                         "myCinemas": [
                                                           {
                                                             "cinemaId": 21,
-                                                            "cinemaName": "홍대입구역"
+                                                            "cinemaName": "홍대입구"
                                                           }
                                                         ],
                                                         "regions": []
