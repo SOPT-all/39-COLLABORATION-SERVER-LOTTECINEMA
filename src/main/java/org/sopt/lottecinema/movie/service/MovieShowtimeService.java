@@ -45,6 +45,6 @@ public class MovieShowtimeService {
                 .map(e -> new RegionResponse(
                         e.getKey(), e.getValue(), List.copyOf(cinemasByRegion.get(e.getKey()))))
                 .toList();
-        return new MovieCinemaResponse(regions);
+        return new MovieCinemaResponse(List.of(new MovieCinemaResponse.MyCinemaResponse(21L, "홍대입구역")), regions);
     }
 }

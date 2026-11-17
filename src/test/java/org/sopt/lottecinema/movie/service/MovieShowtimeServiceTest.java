@@ -35,6 +35,8 @@ class MovieShowtimeServiceTest {
                 new Row(2L, "서울", 11L, "건대입구"),
                 new Row(1L, "경기", null, null)));
 
+        assertThat(service.getCinemaByMovieId(7L).myCinemas())
+                .containsExactly(new org.sopt.lottecinema.movie.dto.MovieCinemaResponse.MyCinemaResponse(21L, "홍대입구역"));
         assertThat(service.getCinemaByMovieId(7L).regions()).containsExactly(
                 new RegionResponse(2L, "서울", List.of(new CinemaResponse(12L, "용산", true),
                         new CinemaResponse(11L, "건대입구", false))),
