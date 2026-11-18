@@ -22,7 +22,7 @@ public class AdminShowtimeController implements AdminShowtimeApi {
     private final AdminShowtimeService adminShowtimeService;
 
     @Override
-    @PostMapping
+    @PostMapping(produces = "application/json")
     public ResponseEntity<SuccessResponse<CreateShowtimeResponse>> createShowtime(@Valid @RequestBody CreateShowtimeRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(SuccessResponse.created(adminShowtimeService.createShowtime(request)));
     }
