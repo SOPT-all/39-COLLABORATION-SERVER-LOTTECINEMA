@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Positive;
+import org.sopt.lottecinema.global.common.ErrorResponse;
 import org.sopt.lottecinema.global.common.SuccessResponse;
 import org.sopt.lottecinema.movie.dto.MovieCinemaResponse;
 import org.springframework.http.MediaType;
@@ -21,12 +22,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 interface MovieShowtimeApi {
 
     @Operation(
+            operationId = "getMovieCinemas",
             summary = "영화별 지역 및 영화관 조회",
             description = "선택한 영화의 상영 회차 유무와 관계없이 모든 지역과 영화관을 조회하고, MY 영화관 목록을 함께 반환합니다. " + "영화관별 hasShowtimes는 날짜와 관계없이 해당 영화의 회차가 하나 이상 등록되어 있으면 true입니다."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
+                    useReturnTypeSchema = true,
                     description = "영화별 지역 및 영화관 목록 조회 성공<br>" + "등록된 영화관이 없는 지역은 `cinemas`가 빈 배열로 반환됩니다.",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, examples = {
                                     @ExampleObject(
@@ -215,6 +218,7 @@ interface MovieShowtimeApi {
             ),
             @ApiResponse(responseCode = "400", description = "movieId 형식이 잘못되었거나 1 미만인 경우",
                     content =  @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
                             examples = {
                                     @ExampleObject(
                                             name = "숫자가 아닌 값",
@@ -244,6 +248,7 @@ interface MovieShowtimeApi {
             ),
             @ApiResponse(responseCode = "404", description = "해당 영화 ID가 존재하지 않을 경우",
                     content =  @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
+                            schema = @Schema(implementation = ErrorResponse.class),
                             examples = @ExampleObject(
                                     value = """
                                             {
@@ -255,7 +260,7 @@ interface MovieShowtimeApi {
                     )
             )
     })
-    @GetMapping("/{movieId}/cinemas")
+    @GetMapping(value = "/{movieId}/cinemas", produces = MediaType.APPLICATION_JSON_VALUE)
     SuccessResponse<MovieCinemaResponse> getCinemaByMovieId(
             @Parameter(
                     description = "조회할 영화 ID (1 이상)",
