@@ -1,5 +1,6 @@
 package org.sopt.lottecinema.reservation.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigInteger;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -7,13 +8,14 @@ import java.util.List;
 import org.sopt.lottecinema.reservation.entity.Reservation;
 
 /** 확정된 예매 정보. 같은 요청의 재응답도 저장된 값으로 구성한다. */
+@Schema(requiredProperties = {"reservationId", "showtimeId", "seatCodes", "ticketCounts", "totalAmount", "createdAt"})
 public record ReservationResponse(
         Long reservationId,
         Long showtimeId,
         List<String> seatCodes,
         TicketCounts ticketCounts,
         int totalAmount,
-        String createdAt
+        @Schema(format = "date-time") String createdAt
 ) {
 
     /** 저장된 인원·총액·시각을 응답으로 옮기고 좌석 코드를 문자열 순서로 정렬한다. */
