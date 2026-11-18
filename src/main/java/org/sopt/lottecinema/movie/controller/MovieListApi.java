@@ -3,9 +3,11 @@ package org.sopt.lottecinema.movie.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.sopt.lottecinema.global.common.ErrorResponse;
 import org.sopt.lottecinema.global.common.SuccessResponse;
 import org.sopt.lottecinema.movie.dto.MovieListsResponse;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public interface MovieListApi {
 
     @Operation(
+            operationId = "findMovies",
             summary = "영화 목록 조회",
             description = """
                     인기 영화, 롯시픽, 롯시플 영화 목록을 각각 정렬하여 조회합니다.
@@ -38,6 +41,7 @@ public interface MovieListApi {
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
+                    useReturnTypeSchema = true,
                     description = "영화 목록 조회 성공",
                     content = @Content(
                             mediaType = "application/json",
@@ -108,9 +112,9 @@ public interface MovieListApi {
             @ApiResponse(
                     responseCode = "500",
                     description = "서버 내부 오류",
-                    content = @Content
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))
             )
     })
-    @GetMapping
+    @GetMapping(produces = "application/json")
     SuccessResponse<MovieListsResponse> findMovies();
 }

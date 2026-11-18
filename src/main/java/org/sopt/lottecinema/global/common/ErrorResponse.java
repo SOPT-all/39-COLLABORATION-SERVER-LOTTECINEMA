@@ -1,6 +1,7 @@
 package org.sopt.lottecinema.global.common;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -9,6 +10,7 @@ import org.sopt.lottecinema.global.exception.ErrorCode;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Schema(requiredProperties = {"status", "code", "message"})
 public class ErrorResponse {
 
     private final int status;
@@ -16,6 +18,7 @@ public class ErrorResponse {
     private final String message;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Schema(description = "검증 오류가 있을 때만 포함됩니다.", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private final List<ValidationError> errors;
 
     /** ErrorCode에 정의된 상태와 기본 메시지로 오류 응답 본문을 만듭니다. */

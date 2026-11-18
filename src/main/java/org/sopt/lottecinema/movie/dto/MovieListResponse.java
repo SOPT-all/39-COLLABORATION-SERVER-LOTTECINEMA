@@ -1,25 +1,28 @@
 package org.sopt.lottecinema.movie.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import org.sopt.lottecinema.movie.entity.CurationType;
 import org.sopt.lottecinema.movie.entity.Movie;
 
+@Schema(requiredProperties = {"movieId", "title", "posterUrl", "genre", "runtimeMinutes", "ageRating",
+        "releaseDate", "curationType", "curationOrder", "popularityRank", "bookingRate", "movieRating", "dDay"})
 public record MovieListResponse(
         Long movieId,
         String title,
-        String posterUrl,
+        @Schema(nullable = true) String posterUrl,
         String genre,
         short runtimeMinutes,
         String ageRating,
         LocalDate releaseDate,
-        CurationType curationType,
-        Short curationOrder,
-        Short popularityRank,
-        BigDecimal bookingRate,
-        BigDecimal movieRating,
-        Long dDay
+        @Schema(nullable = true) CurationType curationType,
+        @Schema(nullable = true) Short curationOrder,
+        @Schema(nullable = true) Short popularityRank,
+        @Schema(nullable = true) BigDecimal bookingRate,
+        @Schema(nullable = true) BigDecimal movieRating,
+        @Schema(nullable = true, description = "개봉 전에는 남은 일수, 개봉 당일 및 이후에는 null입니다.") Long dDay
 ) {
     public static MovieListResponse from(Movie movie, LocalDate referenceDate) {
         boolean isUpcoming = movie.getReleaseDate().isAfter(referenceDate);
