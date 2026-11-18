@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class HealthController implements HealthApi {
 
     @Override
-    @GetMapping("/health")
+    @GetMapping(value = "/health", produces = "application/json")
     public SuccessResponse<String> getHealth() {
         return SuccessResponse.success("UP");
     }
