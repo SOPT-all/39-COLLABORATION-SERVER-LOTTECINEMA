@@ -1,6 +1,7 @@
 package org.sopt.lottecinema.global.common;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonPropertyOrder({"status", "message", "data"})
+@Schema(requiredProperties = {"status", "message", "data"})
 public class SuccessResponse<T> {
 
     private final int status;
