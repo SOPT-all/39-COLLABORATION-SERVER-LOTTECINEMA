@@ -154,3 +154,10 @@ IntelliJ에서 `LottecinemaApplication.java`를 실행하거나 터미널에서 
 서버 실행 후 브라우저에서 Swagger UI를 엽니다.
 
 <http://localhost:8080/swagger-ui/index.html>
+
+프론트의 `swagger-typescript-api`에는 Swagger UI 주소 대신 아래 OpenAPI JSON 주소를 전달합니다.
+
+<http://localhost:8080/v3/api-docs>
+
+nullable enum의 TypeScript 타입을 보존하기 위해 OpenAPI 3.0 명세를 제공합니다.
+배포 서버를 사용할 때는 `localhost:8080`을 해당 서버 주소로 바꿉니다.
