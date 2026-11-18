@@ -46,9 +46,10 @@ public interface ShowtimeApi {
                     schema = @Schema(type = "integer", format = "int64", minimum = "1"))
             @Positive(message = "상영 회차 ID는 1 이상이어야 합니다.") Long showtimeId);
 
-    @Operation(summary = "상영 회차 조회", description = "영화·영화관 별 상영 회차의 세부 정보(상영 시작 시간, 좌석 현황, 등)를 조회합니다.")
+    @Operation(operationId = "findShowtimes", summary = "상영 회차 조회", description = "영화·영화관 별 상영 회차의 세부 정보(상영 시작 시간, 좌석 현황, 등)를 조회합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "상영 회차 조회 성공<br>"+"해당 날짜에 회차가 없으면 빈 배열을 반환합니다.",
+                    useReturnTypeSchema = true,
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, examples = {
                             @ExampleObject(name = "상영 회차 존재 (잔여석 / 매진 포함)", value = """
                                     {
