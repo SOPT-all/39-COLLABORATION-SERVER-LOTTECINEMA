@@ -42,7 +42,8 @@ interface MovieShowtimeApi {
                                                             "myCinemas": [
                                                                 {
                                                                     "cinemaId": 21,
-                                                                    "cinemaName": "홍대입구"
+                                                                    "cinemaName": "홍대입구",
+                                                                    "hasShowtimes": false
                                                                 }
                                                             ],
                                                             "regions": [

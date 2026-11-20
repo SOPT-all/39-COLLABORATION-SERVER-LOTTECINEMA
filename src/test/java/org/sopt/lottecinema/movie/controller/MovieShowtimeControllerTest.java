@@ -33,13 +33,13 @@ class MovieShowtimeControllerTest {
     @Test
     void returnsCinemaAvailabilityAndEmptyCinemaArray() throws Exception {
         when(service.getCinemaByMovieId(7L)).thenReturn(new MovieCinemaResponse(
-                List.of(new MovieCinemaResponse.MyCinemaResponse(21L, "홍대입구역")), List.of(
+                List.of(new MovieCinemaResponse.MyCinemaResponse(21L, "홍대입구", false)), List.of(
                 new RegionResponse(1L, "서울", List.of(new CinemaResponse(11L, "용산", true),
                         new CinemaResponse(12L, "건대입구", false))),
                 new RegionResponse(2L, "경기", List.of()))));
 
         mvc.perform(get(PATH, 7)).andExpect(status().isOk()).andExpect(content().json("""
-                {"status":200,"message":"OK","data":{"myCinemas":[{"cinemaId":21,"cinemaName":"홍대입구역"}],"regions":[
+                {"status":200,"message":"OK","data":{"myCinemas":[{"cinemaId":21,"cinemaName":"홍대입구","hasShowtimes": false}],"regions":[
                   {"regionId":1,"regionName":"서울","cinemas":[
                     {"cinemaId":11,"cinemaName":"용산","hasShowtimes":true},
                     {"cinemaId":12,"cinemaName":"건대입구","hasShowtimes":false}]},

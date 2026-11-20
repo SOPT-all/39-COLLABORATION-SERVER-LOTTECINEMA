@@ -9,10 +9,11 @@ public record MovieCinemaResponse(
         List<MyCinemaResponse> myCinemas,
         List<RegionResponse> regions
 ) {
-    @Schema(requiredProperties = {"cinemaId", "cinemaName"})
+    @Schema(requiredProperties = {"cinemaId", "cinemaName","hasShowtimes"})
     public record MyCinemaResponse(
             Long cinemaId,
-            String cinemaName
+            String cinemaName,
+            boolean hasShowtimes
     ) {}
 
     @Schema(requiredProperties = {"regionId", "regionName", "cinemas"})
